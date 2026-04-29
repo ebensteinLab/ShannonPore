@@ -34,8 +34,13 @@ def test_doctor_runs_and_reports() -> None:
     for required_row in ("python", "streamlit", "pandas", "numpy",
                          "modkit", "RESULTS_DIR"):
         assert required_row in out, f"doctor row missing: {required_row}"
-    # Final summary line
-    assert "All checks passed" in out or "check(s) failed" in out
+    # Final summary line — one of: all passed, advisories-only (still OK),
+    # or hard failures.
+    assert (
+        "All checks passed" in out
+        or "Install is functional" in out
+        or "check(s) failed" in out
+    )
 
 
 @pytest.mark.integration

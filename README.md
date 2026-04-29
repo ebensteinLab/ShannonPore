@@ -156,10 +156,11 @@ shannonpore run --pair \
 shannonpore extract --bam       sample.bam   sample.tsv  --genome hg38
 shannonpore extract --bam-folder /lab/runs   merged.tsv  --genome hg38
 
-# Plot
-shannonpore plot hexbin scatter.png \
-    --x-bedgraph control.me.bedgraph --y-bedgraph treated.me.bedgraph \
-    --x-label "control ME" --y-label "treated ME"
+# Plot — ME / MML scatter, arch landscape, or paired landscape
+shannonpore plot scatter scatter.png \
+    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \
+    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \
+    --label-a Control --label-b Treated
 
 # Verify install / debug
 shannonpore doctor

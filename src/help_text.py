@@ -56,16 +56,16 @@ A `run_summary.json` file in the output dir lists every produced file.
 
 ## 5.  Plot
 
-CLI:
+CLI — one-shot pair plot (the four bedgraphs are produced by `run --pair`):
 
-    shannonpore plot scatter scatter.png \\
-        --x-bedgraph control.me.bedgraph \\
-        --y-bedgraph target.me.bedgraph \\
-        --x-label "control ME" --y-label "target ME"
+    shannonpore plot scatter   scatter.png   --control-mml ctrl.mml.bedgraph --control-me ctrl.me.bedgraph --target-mml tgt.mml.bedgraph  --target-me tgt.me.bedgraph  --label-a Control --label-b Target
+    shannonpore plot arch      arch.png      --control-mml ...               --control-me ...              --target-mml ...               --target-me ...
+    shannonpore plot landscape landscape.png --control-mml ...               --control-me ...              --target-mml ...               --target-me ...                --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1   --filter-b-dim '|dME|'  --filter-b-op '>' --filter-b-value 0.4
 
 GUI:
 The Plotting tab is auto-populated with the bedgraphs from your last run.
-Just open it and click "render".
+Pick a plot type — track, ME/MML scatter, arch landscape, or paired
+landscape — and click "render".
 
 ## Verification & troubleshooting
 
@@ -123,15 +123,25 @@ shannonpore extract --bam sample.bam sample.tsv --genome hg38 --threads 8
 shannonpore entropy sample.tsv out/sample \\
     --genome hg38 --mode bisulfite --cpgs-per-bin 4
 
-# Plot density scatter of two samples
-shannonpore plot hexbin scatter.png \\
-    --x-bedgraph control.me.bedgraph \\
-    --y-bedgraph treated.me.bedgraph \\
-    --x-label "control ME" --y-label "treated ME"
+# ME / MML control-vs-target scatter (linear colour scale)
+shannonpore plot scatter scatter.png \\
+    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \\
+    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
+    --label-a Control --label-b Treated --no-log-scale
 
-# Distribution of ME values
-shannonpore plot distribution dist.png \\
-    --x-bedgraph sample.me.bedgraph --dist-kind violin
+# Three-panel arch landscape (control | target | difference)
+shannonpore plot arch arch.png \\
+    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \\
+    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
+    --label-a Control --label-b Treated
+
+# Paired landscape with direction arrows (filter to entropy-shifted bins)
+shannonpore plot landscape paired.png \\
+    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \\
+    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
+    --label-a Control --label-b Treated \\
+    --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1 \\
+    --filter-b-dim '|dME|'  --filter-b-op '>' --filter-b-value 0.4
 
 # Verify install
 shannonpore doctor
@@ -155,7 +165,7 @@ it produces three bedgraphs you can plot in the next tab:
 **Three steps:**
 
 1. **File Preparation** *(this tab)* — pick inputs, choose a 5hmC mode, run.
-2. **Graph Preparation** *(next tab)* — render tracks, scatter, distributions.
+2. **Graph Preparation** *(next tab)* — render tracks, ME/MML scatter, arch landscape, and paired landscape.
    Bedgraph paths are auto-loaded after step 1.
 
 You can run a **single sample**, or **pair mode** (control + target) which
@@ -239,16 +249,6 @@ SEC_GP_REGION = (
     "(<1 Mb) render fastest. The optional GTF turns on a gene panel under "
     "the methylation tracks."
 )
-SEC_GP_SCATTER = (
-    "Compare control vs target for one metric (MML or ME) across the whole "
-    "genome. Hexbin shows density; scatter shows individual bins (subsample "
-    "for speed on dense data)."
-)
-SEC_GP_DISTRIBUTION = (
-    "Distribution of values from one bedgraph across all bins. Useful for "
-    "spotting bimodal MML or wide ME spreads at a glance."
-)
-
 GUI_HELP_METHYL_THRESHOLD = (
     "Per-call probability threshold. mod_qual > threshold ⇒ 'methylated'. "
     "0.5 is the modkit default."

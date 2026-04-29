@@ -19,7 +19,7 @@
         │                                      └─────────────────────┘
         │
         ├─► src/pipelines/  (modkit_runner · roi_entropy · whole_genome_duckdb · ternary)
-        ├─► src/plots/      (tracks · scatter · distributions · theme)
+        ├─► src/plots/      (tracks · scatter [ME/MML + arch + paired] · theme)
         ├─► src/io/         (bedgraph · gtf_utils · roi_utils · utils_io)
         └─► src/ui/         (error_handler · progress · widgets · style)
 ```
@@ -36,7 +36,7 @@ The CLI shares 100% of its compute path with the GUI — both call into
 | `app.py` | <200 | page config, sidebar, tab dispatch, style injection |
 | `src/cli.py` | ~600 | argparse + 6 subcommands |
 | `src/tabs/tab_file_prep.py` | ~290 | input + entropy-mode + bins + output |
-| `src/tabs/tab_graph_prep.py` | ~190 | tracks, scatter, distributions |
+| `src/tabs/tab_graph_prep.py` | ~390 | tracks · ME/MML scatter · arch landscape · paired landscape |
 | `src/state.py` | ~110 | AppState dataclass + accessors |
 | `src/pipelines/*` | 4 modules | one per compute strategy |
 | `src/plots/*` | 4 modules | one per plot family |

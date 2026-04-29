@@ -180,11 +180,14 @@ def test_cli_entropy_ternary_writes_extra_bedgraphs(
 
 # ─── 5. plot ──────────────────────────────────────────────────────────────
 
-def test_cli_plot_scatter_produces_png(
-    shared_extract_tsv: tuple[Path, Path], tmp_path: Path,
-) -> None:
+@pytest.fixture(scope="module")
+def paired_bedgraphs(
+    shared_extract_tsv: tuple[Path, Path], tmp_path_factory,
+) -> tuple[Path, Path, Path, Path]:
+    """Run `entropy` once and reuse the bedgraphs as both control & target."""
     fa, tsv = shared_extract_tsv
-    out_prefix = tmp_path / "for_plot"
+    tmp = tmp_path_factory.mktemp("paired_bg")
+    out_prefix = tmp / "for_plot"
     _run_cli(
         "entropy", str(tsv), str(out_prefix),
         "--fasta", str(fa), "--threads", "2",
@@ -195,38 +198,58 @@ def test_cli_plot_scatter_produces_png(
     )
     me_bg = Path(f"{out_prefix}.me.bedgraph")
     mml_bg = Path(f"{out_prefix}.mml.bedgraph")
+    # Use the same files for control and target — the CLI just renders.
+    return mml_bg, me_bg, mml_bg, me_bg
 
+
+def test_cli_plot_scatter_produces_png(
+    paired_bedgraphs: tuple[Path, Path, Path, Path], tmp_path: Path,
+) -> None:
+    ctrl_mml, ctrl_me, tgt_mml, tgt_me = paired_bedgraphs
     out_png = tmp_path / "scatter.png"
     _run_cli(
         "plot", "scatter", str(out_png),
-        "--x-bedgraph", str(me_bg),
-        "--y-bedgraph", str(mml_bg),
-        "--x-label", "ME",
-        "--y-label", "MML",
-        "--subsample", "1000",
+        "--control-mml", str(ctrl_mml),
+        "--control-me", str(ctrl_me),
+        "--target-mml", str(tgt_mml),
+        "--target-me", str(tgt_me),
+        "--label-a", "Control", "--label-b", "Target",
+        "--no-log-scale",
     )
     assert out_png.exists() and out_png.stat().st_size > 0
 
 
-def test_cli_plot_distribution_produces_png(
-    shared_extract_tsv: tuple[Path, Path], tmp_path: Path,
+def test_cli_plot_arch_produces_png(
+    paired_bedgraphs: tuple[Path, Path, Path, Path], tmp_path: Path,
 ) -> None:
-    fa, tsv = shared_extract_tsv
-    out_prefix = tmp_path / "for_dist"
+    ctrl_mml, ctrl_me, tgt_mml, tgt_me = paired_bedgraphs
+    out_png = tmp_path / "arch.png"
     _run_cli(
-        "entropy", str(tsv), str(out_prefix),
-        "--fasta", str(fa), "--threads", "2",
-        "--mode", "true_mc",
-        "--cpgs-per-bin", "2",
-        "--min-coverage", "4",
-        "--chroms", "chr_test",
+        "plot", "arch", str(out_png),
+        "--control-mml", str(ctrl_mml),
+        "--control-me", str(ctrl_me),
+        "--target-mml", str(tgt_mml),
+        "--target-me", str(tgt_me),
+        "--label-a", "Control", "--label-b", "Target",
     )
-    me_bg = Path(f"{out_prefix}.me.bedgraph")
-    out_png = tmp_path / "dist.png"
+    assert out_png.exists() and out_png.stat().st_size > 0
+
+
+def test_cli_plot_landscape_produces_png(
+    paired_bedgraphs: tuple[Path, Path, Path, Path], tmp_path: Path,
+) -> None:
+    ctrl_mml, ctrl_me, tgt_mml, tgt_me = paired_bedgraphs
+    out_png = tmp_path / "landscape.png"
     _run_cli(
-        "plot", "distribution", str(out_png),
-        "--x-bedgraph", str(me_bg),
-        "--dist-kind", "hist",
+        "plot", "landscape", str(out_png),
+        "--control-mml", str(ctrl_mml),
+        "--control-me", str(ctrl_me),
+        "--target-mml", str(tgt_mml),
+        "--target-me", str(tgt_me),
+        "--label-a", "Control", "--label-b", "Target",
+        # Disable both filters so the synthetic 4-bin fixture isn't culled.
+        "--filter-a-dim", "off",
+        "--filter-b-dim", "off",
     )
     assert out_png.exists() and out_png.stat().st_size > 0
 

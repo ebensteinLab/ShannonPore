@@ -11,7 +11,7 @@ Subcommands
                 (--mode true_mc | bisulfite | ternary)
 - ``segment``   bedgraph → segments BED (PELT or greedy)
 - ``annotate``  segments BED → gene + GO annotation via R bridge
-- ``plot``      bedgraphs → track / scatter / distribution PNG
+- ``plot``      bedgraphs → track / ME-MML scatter / arch / paired landscape PNG
 - ``run``       one-shot pipeline: BAM → entropy → segment → annotate
 - ``doctor``    verify every dependency, version, and permission
 - ``selftest``  end-to-end pipeline smoke test on a synthetic BAM
@@ -45,7 +45,6 @@ from src.constants import (
     ENTROPY_MODE_TRUE_MC,
     ENTROPY_MODES,
 )
-from src.io.bedgraph import read_bedgraph
 
 logger = logging.getLogger("shannonpore.cli")
 
@@ -179,8 +178,12 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 
 def cmd_plot(args: argparse.Namespace) -> int:
     from src.io.gtf_utils import load_genes_from_gtf
-    from src.plots.distributions import metric_distribution
-    from src.plots.scatter import hexbin_density, paired_scatter
+    from src.plots.scatter import (
+        load_paired_bedgraphs,
+        me_mml_scatter,
+        paired_landscape,
+        triple_landscape,
+    )
     from src.plots.theme import apply_default_style
     from src.plots.tracks import plot_two_bedgraph_overlays
 
@@ -189,8 +192,11 @@ def cmd_plot(args: argparse.Namespace) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     if args.kind == "tracks":
-        gtf_df = (load_genes_from_gtf(args.gtf)
-                  if args.gtf and Path(args.gtf).exists() else None)
+        gtf_df = (
+            load_genes_from_gtf(args.gtf)
+            if args.gtf and Path(args.gtf).exists()
+            else None
+        )
         plot_two_bedgraph_overlays(
             top_files=[args.control_mml, args.target_mml],
             bottom_files=[args.control_me, args.target_me],
@@ -198,29 +204,53 @@ def cmd_plot(args: argparse.Namespace) -> int:
             chrom=args.chrom, start=int(args.start), end=int(args.end),
             out_path=str(out_path), window_size=int(args.window),
         )
-    elif args.kind in ("scatter", "hexbin"):
-        df_x = read_bedgraph(args.x_bedgraph)
-        df_y = read_bedgraph(args.y_bedgraph)
-        if df_x.empty or df_y.empty:
-            raise SystemExit("One or both bedgraphs are empty.")
-        if args.kind == "hexbin":
-            hexbin_density(
-                df_x, df_y, x_label=args.x_label, y_label=args.y_label,
-                out_path=str(out_path),
-            )
-        else:
-            paired_scatter(
-                df_x, df_y, x_label=args.x_label, y_label=args.y_label,
-                subsample=int(args.subsample) if args.subsample else None,
-                out_path=str(out_path),
-            )
-    elif args.kind == "distribution":
-        df = read_bedgraph(args.x_bedgraph)
-        if df.empty:
-            raise SystemExit("Bedgraph empty.")
-        metric_distribution(
-            df, value_col="value", kind=args.dist_kind, out_path=str(out_path),
+    elif args.kind in ("scatter", "arch", "landscape"):
+        # All three need the four paired bedgraphs.
+        for required in ("control_mml", "control_me", "target_mml", "target_me"):
+            if not getattr(args, required):
+                raise SystemExit(
+                    f"--{required.replace('_', '-')} is required for "
+                    f"plot kind '{args.kind}'."
+                )
+        df = load_paired_bedgraphs(
+            control_mml=args.control_mml,
+            control_me=args.control_me,
+            target_mml=args.target_mml,
+            target_me=args.target_me,
         )
+        if df.empty:
+            raise SystemExit(
+                "No overlapping bins found across the four bedgraphs."
+            )
+        log_scale = bool(args.log_scale)
+
+        if args.kind == "scatter":
+            me_mml_scatter(
+                df,
+                label_a=args.label_a, label_b=args.label_b,
+                log_scale=log_scale, out_path=str(out_path),
+            )
+        elif args.kind == "arch":
+            triple_landscape(
+                df,
+                label_a=args.label_a, label_b=args.label_b,
+                color_a=args.color_a, color_b=args.color_b,
+                log_scale=log_scale, out_path=str(out_path),
+            )
+        else:  # landscape (paired)
+            paired_landscape(
+                df,
+                label_a=args.label_a, label_b=args.label_b,
+                color_a=args.color_a, color_b=args.color_b,
+                filter_a_dim=None if args.filter_a_dim == "off" else args.filter_a_dim,
+                filter_a_op=args.filter_a_op,
+                filter_a_value=float(args.filter_a_value),
+                filter_b_dim=None if args.filter_b_dim == "off" else args.filter_b_dim,
+                filter_b_op=args.filter_b_op,
+                filter_b_value=float(args.filter_b_value),
+                max_lines=int(args.max_lines),
+                out_path=str(out_path),
+            )
     else:
         raise SystemExit(f"Unknown plot kind: {args.kind!r}")
     print(f"[OK] plot → {out_path}")
@@ -657,29 +687,74 @@ def build_parser() -> argparse.ArgumentParser:
 
     # plot --------------------------------------------------------------------
     p_pl = sub.add_parser(
-        "plot", help="Bedgraphs → tracks / scatter / hexbin / distribution PNG.",
+        "plot",
+        help="Bedgraphs → tracks / scatter / arch / landscape PNG.",
+        description=(
+            "Render one of four plot kinds from your bedgraphs:\n\n"
+            "  tracks     control & target MML/ME along a genomic window,\n"
+            "             optional gene panel from a GTF\n"
+            "  scatter    side-by-side ME and MML 2D-histograms\n"
+            "             (control vs target)\n"
+            "  arch       three-panel MML × ME density landscape with the\n"
+            "             theoretical entropy arch\n"
+            "  landscape  paired-line scatter with direction arrows on a\n"
+            "             configurable bin filter"
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p_pl.add_argument("kind", choices=["tracks", "scatter", "hexbin", "distribution"])
+    p_pl.add_argument(
+        "kind", choices=["tracks", "scatter", "arch", "landscape"],
+    )
     p_pl.add_argument("out_path", help="Output PNG path.")
-    p_pl.add_argument("--x-bedgraph", default=None,
-                      help="x-axis bedgraph (scatter/hexbin/distribution).")
-    p_pl.add_argument("--y-bedgraph", default=None,
-                      help="y-axis bedgraph (scatter/hexbin).")
-    p_pl.add_argument("--x-label", default="x")
-    p_pl.add_argument("--y-label", default="y")
-    p_pl.add_argument("--subsample", type=int, default=50_000)
-    p_pl.add_argument("--dist-kind", default="violin",
-                      choices=["violin", "box", "hist"])
-    # tracks specifics
+
+    # Inputs (used by scatter / arch / landscape AND tracks)
     p_pl.add_argument("--control-mml", default=None)
-    p_pl.add_argument("--target-mml", default=None)
     p_pl.add_argument("--control-me", default=None)
+    p_pl.add_argument("--target-mml", default=None)
     p_pl.add_argument("--target-me", default=None)
+
+    # Sample labels + colours (carried into all plots)
+    p_pl.add_argument("--label-a", default="Control",
+                      help="Label for sample A (control). Default: Control.")
+    p_pl.add_argument("--label-b", default="Target",
+                      help="Label for sample B (target). Default: Target.")
+    p_pl.add_argument("--color-a", default="#1f77b4",
+                      help="Colour for sample A (control). Default: #1f77b4.")
+    p_pl.add_argument("--color-b", default="#ff7f0e",
+                      help="Colour for sample B (target). Default: #ff7f0e.")
+
+    # scatter / arch — log vs linear colour scale
+    p_pl.add_argument(
+        "--log-scale", action=argparse.BooleanOptionalAction, default=True,
+        help="log10 colour scale (default). Use --no-log-scale for linear.",
+    )
+
+    # landscape (paired) — two AND-ed filters
+    _filter_dims = ["off", "MML", "|dMML|", "ME", "|dME|"]
+    p_pl.add_argument("--filter-a-dim", default="|dMML|",
+                      choices=_filter_dims,
+                      help="Landscape filter A dimension (default: |dMML|).")
+    p_pl.add_argument("--filter-a-op", default="<", choices=["<", ">"],
+                      help="Landscape filter A op (default: <).")
+    p_pl.add_argument("--filter-a-value", type=float, default=0.1,
+                      help="Landscape filter A threshold (default: 0.1).")
+    p_pl.add_argument("--filter-b-dim", default="|dME|",
+                      choices=_filter_dims,
+                      help="Landscape filter B dimension (default: |dME|).")
+    p_pl.add_argument("--filter-b-op", default=">", choices=["<", ">"],
+                      help="Landscape filter B op (default: >).")
+    p_pl.add_argument("--filter-b-value", type=float, default=0.4,
+                      help="Landscape filter B threshold (default: 0.4).")
+    p_pl.add_argument("--max-lines", type=int, default=20_000,
+                      help="Max paired lines drawn (default: 20000).")
+
+    # tracks specifics
     p_pl.add_argument("--gtf", default=None)
     p_pl.add_argument("--chrom", default="")
     p_pl.add_argument("--start", type=int, default=0)
     p_pl.add_argument("--end", type=int, default=0)
     p_pl.add_argument("--window", type=int, default=25)
+
     p_pl.add_argument("-v", "--verbose", action="count", default=0)
     p_pl.set_defaults(func=cmd_plot)
 

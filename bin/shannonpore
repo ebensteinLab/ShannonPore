@@ -1,33 +1,37 @@
 #!/usr/bin/env bash
-# nanoentropy — bash entry point that wraps the Python CLI.
+# shannonpore — bash entry point that wraps the Python CLI.
 #
-# After `pip install -e .` the [project.scripts] entry creates a
-# Python-launcher `nanoentropy` on PATH. This file is a fallback wrapper
-# that works WITHOUT installing the package — useful for one-shot use
-# from a fresh clone:
+# Works whether this script is invoked directly OR via a symlink in
+# ~/.local/bin (which install.sh creates), because it resolves
+# BASH_SOURCE[0] through any chain of symlinks before computing the
+# repo location.
 #
-#     export PATH="$PWD/bin:$PATH"
-#     nanoentropy --help
-#
-# It activates the conda env if NANOENTROPY_ENV_NAME is set, or falls
-# back to the system Python interpreter.
+# Resolves the conda env via `mamba run` / `conda run` so the user
+# never needs to `mamba activate`. Falls back to the system python3
+# if no conda CLI / env is found.
 
 set -euo pipefail
 
-V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy}"
+# Resolve this script's true location through any symlinks.
+SCRIPT="${BASH_SOURCE[0]}"
+while [[ -L "$SCRIPT" ]]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT")" && pwd)"
+    SCRIPT="$(readlink "$SCRIPT")"
+    [[ "$SCRIPT" != /* ]] && SCRIPT="$SCRIPT_DIR/$SCRIPT"
+done
+V4_DIR="$(cd -P "$(dirname "$SCRIPT")/.." && pwd)"
 
-# Try to use the project conda env if it exists.
-if command -v micromamba >/dev/null 2>&1; then
-    if micromamba env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
-        exec micromamba run -n "$ENV_NAME" python -m src.cli "$@"
-    fi
-elif command -v conda >/dev/null 2>&1; then
-    if conda env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
-        exec conda run -n "$ENV_NAME" python -m src.cli "$@"
-    fi
-fi
+ENV_NAME="${SHANNONPORE_ENV_NAME:-shannonpore}"
 
-# Fallback: use whatever python3 is on PATH from inside the project root.
+# Prefer a conda-family CLI so we don't depend on the user's shell init.
+for cli in micromamba mamba conda; do
+    if command -v "$cli" >/dev/null 2>&1; then
+        if "$cli" env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
+            exec "$cli" run -n "$ENV_NAME" python -m src.cli "$@"
+        fi
+    fi
+done
+
+# Fallback: use whatever python3 is on PATH, from inside the project root.
 cd "$V4_DIR"
 exec python3 -m src.cli "$@"

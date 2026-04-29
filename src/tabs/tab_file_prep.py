@@ -147,6 +147,7 @@ def _run(out_dir: Path) -> dict:
             threads=fp.modkit_threads,
             progress_cb=progress_and_bar,
             pct_cb=bar.update,
+            status_cb=bar.status_line,  # modkit's in-place progress bar
         )
 
     summary = {

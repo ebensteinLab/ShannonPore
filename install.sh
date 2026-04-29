@@ -100,41 +100,48 @@ log "Ensuring REFERENCE_DIR exists: $REF_DIR"
 mkdir -p "$REF_DIR"
 
 # Reference FASTAs are MULTI-GIGABYTE (hg38 ~3.2 GiB, mm10 ~2.8 GiB).
-# Auto-downloading by default would hang most installs, fill disks, and is
-# a really bad first-run experience — so the install is OPT-IN.
+# As of this version they are downloaded BY DEFAULT so the tool is
+# usable immediately after install. Opt out with:
 #
-#   bash install.sh                                             # no FASTA download (default)
-#   SHANNONPORE_DOWNLOAD_REFERENCES=1 bash install.sh           # download both genomes
-#   SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh        # download just one
-#   SHANNONPORE_REF_DIR=/path/to/your/refs bash install.sh      # use existing refs
+#   SHANNONPORE_SKIP_REFERENCES=1 bash install.sh           # skip entirely
+#   SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh    # only hg38
+#   SHANNONPORE_DOWNLOAD_REFERENCES=mm10 bash install.sh    # only mm10
+#   SHANNONPORE_REF_DIR=/path/to/your/refs bash install.sh  # use existing
 HAS_HG38="$([[ -s "$REF_DIR/hg38.fa" && -s "$REF_DIR/hg38.fa.fai" ]] && echo yes || echo no)"
 HAS_MM10="$([[ -s "$REF_DIR/mm10.fa" && -s "$REF_DIR/mm10.fa.fai" ]] && echo yes || echo no)"
 
-DL_REQ="${SHANNONPORE_DOWNLOAD_REFERENCES:-0}"
 if [[ "$HAS_HG38" == "yes" && "$HAS_MM10" == "yes" ]]; then
     log "Reference FASTAs already present (hg38 + mm10)."
-elif [[ "$DL_REQ" == "0" || -z "$DL_REQ" ]]; then
-    log "Reference FASTAs not downloaded (default)."
-    log "  → To use the GUI / CLI you need a populated REFERENCE_DIR."
-    log "  → Either set SHANNONPORE_REF_DIR to your existing refs, OR run:"
-    log "      bash $V4_DIR/scripts/setup_references.sh                # both"
-    log "      bash $V4_DIR/scripts/setup_references.sh --genome hg38  # one"
+elif [[ "${SHANNONPORE_SKIP_REFERENCES:-0}" == "1" ]]; then
+    warn "SHANNONPORE_SKIP_REFERENCES=1 — skipping FASTA download."
+    warn "Populate manually later:"
+    warn "    bash $V4_DIR/scripts/setup_references.sh"
 else
+    # Honour SHANNONPORE_DOWNLOAD_REFERENCES if user pinned a single
+    # genome; otherwise default to BOTH (hg38 + mm10).
+    DL_REQ="${SHANNONPORE_DOWNLOAD_REFERENCES:-1}"
     case "$DL_REQ" in
-        1|both|all)         DL_ARGS=() ;;
-        hg38)               DL_ARGS=(--genome hg38) ;;
-        mm10)               DL_ARGS=(--genome mm10) ;;
-        *) warn "SHANNONPORE_DOWNLOAD_REFERENCES=$DL_REQ — expected 1|hg38|mm10; skipping download."
-           DL_ARGS=("--noop") ;;
+        1|both|all)  DL_ARGS=() ;;
+        hg38)        DL_ARGS=(--genome hg38) ;;
+        mm10)        DL_ARGS=(--genome mm10) ;;
+        *)
+            warn "SHANNONPORE_DOWNLOAD_REFERENCES=$DL_REQ — expected 1|hg38|mm10."
+            warn "Defaulting to both."
+            DL_ARGS=()
+            ;;
     esac
-    if [[ "${DL_ARGS[0]:-}" != "--noop" ]]; then
-        log "Downloading UCSC reference FASTAs + GTFs (multi-GiB; this can take 30+ min)..."
-        if RUN bash "$V4_DIR/scripts/setup_references.sh" "${DL_ARGS[@]}"; then
-            log "Reference download complete."
-        else
-            warn "Reference download incomplete. Re-run later:"
-            warn "    bash $V4_DIR/scripts/setup_references.sh ${DL_ARGS[*]}"
-        fi
+    log ""
+    log "Downloading UCSC reference FASTAs + GTFs (multi-GiB)."
+    log "This can take 20–60 min depending on bandwidth. Skip with"
+    log "  SHANNONPORE_SKIP_REFERENCES=1 bash install.sh"
+    log "or grab just one genome with"
+    log "  SHANNONPORE_DOWNLOAD_REFERENCES=hg38|mm10 bash install.sh"
+    log ""
+    if RUN bash "$V4_DIR/scripts/setup_references.sh" "${DL_ARGS[@]}"; then
+        log "Reference download complete."
+    else
+        warn "Reference download incomplete. Re-run later:"
+        warn "    bash $V4_DIR/scripts/setup_references.sh ${DL_ARGS[*]}"
     fi
 fi
 export SHANNONPORE_REF_DIR="$REF_DIR"

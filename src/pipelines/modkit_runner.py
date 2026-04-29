@@ -19,13 +19,30 @@ def run_modkit_extract_minimal(
     threads: int,
     log_filepath: str,
     stream_cb: Callable[[str], None] | None = None,
+    status_cb: Callable[[str], None] | None = None,
 ) -> None:
     """Run `modkit extract full` with minimal args:
     `--reference <FASTA> --cpg --threads N --force --log-filepath LOG`.
 
-    Streams stdout line-by-line through `stream_cb`. Raises RuntimeError
-    if modkit returns non-zero or produces empty output.
+    modkit emits two kinds of output on stdout/stderr:
+
+    * **Final lines** end with ``\\n`` — log records like
+      "found BAM index, processing reads in 100000 base pair chunks".
+      These are sent to ``stream_cb`` and are intended to be appended
+      to a scrolling log.
+    * **Progress frames** end with ``\\r`` — modkit's `indicatif`
+      progress bar redraws itself in place. These are sent to
+      ``status_cb`` and should *replace* the previous status line in
+      the UI (otherwise the user sees a stack of near-identical
+      frames). If ``status_cb`` is None, progress frames are
+      forwarded to ``stream_cb`` instead so callers that don't
+      distinguish them still see the bar.
+
+    Raises RuntimeError if modkit returns non-zero or produces empty
+    output.
     """
+    if status_cb is None:
+        status_cb = stream_cb
     safe_mkdir(os.path.dirname(out_tsv_path))
     safe_mkdir(os.path.dirname(log_filepath))
 
@@ -69,6 +86,8 @@ def run_modkit_extract_minimal(
             text = chunk.decode("utf-8", errors="replace")
             for ch in text:
                 if ch == "\r":
+                    if current_line.strip() and status_cb:
+                        status_cb(current_line)
                     current_line = ""
                 elif ch == "\n":
                     if current_line.strip():

@@ -30,6 +30,11 @@ class Progress(AbstractContextManager):
     """Common interface; concrete subclasses implement these methods."""
 
     def status(self, msg: str) -> None: ...
+    def status_line(self, msg: str) -> None:
+        """Replace the most recent status line in place (for ephemeral
+        progress-bar frames terminated by ``\\r``). Default: same as
+        ``status`` — subclasses override for in-place updates."""
+        self.status(msg)
     def update(self, fraction: float, msg: str = "") -> None: ...
     def close(self) -> None: ...
 
@@ -37,6 +42,10 @@ class Progress(AbstractContextManager):
     @property
     def progress_cb(self):
         return self.status
+
+    @property
+    def status_cb(self):
+        return self.status_line
 
     @property
     def pct_cb(self):
@@ -87,6 +96,17 @@ class CLIProgress(Progress):
         except (OSError, ValueError):
             print(msg, flush=True)
 
+    def status_line(self, msg: str) -> None:
+        """In-place ephemeral status (e.g. modkit's progress bar frames).
+
+        Stuffs the latest frame into tqdm's right-hand postfix so it
+        updates in place rather than scrolling — exactly what the user
+        wants for a remote tool's own progress bar.
+        """
+        # Trim to keep tqdm's line single-row even on wide bars.
+        with contextlib.suppress(OSError, ValueError):
+            self._tqdm.set_postfix_str(str(msg)[:80], refresh=True)
+
     def update(self, fraction: float, msg: str = "") -> None:
         pct = max(0, min(100, int(round(fraction * 100))))
         delta = pct - self._last_pct
@@ -124,6 +144,8 @@ class StreamlitProgress(Progress):
         self._bar = self._status.progress(0.0, text=label)
         self._log_lines: list[str] = []
         self._log_box = self._status.empty()
+        # Dedicated slot for in-place status (modkit's progress bar etc.).
+        self._status_line_box = self._status.empty()
         self._label = label
 
     def status(self, msg: str) -> None:
@@ -133,6 +155,15 @@ class StreamlitProgress(Progress):
         # Show only the last 12 lines in monospaced code block.
         tail = "\n".join(self._log_lines[-12:])
         self._log_box.code(tail, language="text")
+
+    def status_line(self, msg: str) -> None:
+        """In-place status — for ``\\r``-terminated progress-bar frames
+        from external tools (modkit). Replaces the previous frame
+        rather than appending, so the user sees a live updating
+        single line instead of a cascade of near-identical entries."""
+        if not msg:
+            return
+        self._status_line_box.code(str(msg), language="text")
 
     def update(self, fraction: float, msg: str = "") -> None:
         f = max(0.0, min(1.0, float(fraction)))

@@ -295,6 +295,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             chroms=args.chroms or "",
             progress_cb=bar.status,
             pct_cb=bar.update,
+            status_cb=bar.status_line,  # in-place modkit progress bar
         )
 
     summary: dict = {

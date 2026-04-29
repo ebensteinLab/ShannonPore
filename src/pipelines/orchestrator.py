@@ -87,8 +87,16 @@ def _ensure_tsv(
     threads: int,
     progress_cb: Callable[[str], None] | None,
     pct_cb: Callable[[float, str], None] | None,
+    status_cb: Callable[[str], None] | None = None,
 ) -> tuple[Path, Path | None]:
-    """Return (tsv_path, bam_used_or_None). Runs modkit if needed."""
+    """Return (tsv_path, bam_used_or_None). Runs modkit if needed.
+
+    ``status_cb`` is called with ephemeral lines from modkit's progress
+    bar (terminated by ``\\r``). When provided, this lets the UI render
+    the live updating bar in place. When None, modkit's progress bar
+    falls through to ``progress_cb`` so callers that don't distinguish
+    still see it.
+    """
     if spec.input_kind == "tsv":
         if not spec.tsv_path:
             raise ValueError(f"sample '{spec.label}': tsv_path not set")
@@ -111,6 +119,7 @@ def _ensure_tsv(
         threads=threads,
         log_filepath=log_filepath,
         stream_cb=progress_cb,
+        status_cb=status_cb,
     )
     if pct_cb:
         pct_cb(1.0, "modkit extract done")
@@ -130,6 +139,7 @@ def run_one_sample(
     chroms: str = "",
     progress_cb: Callable[[str], None] | None = None,
     pct_cb: Callable[[float, str], None] | None = None,
+    status_cb: Callable[[str], None] | None = None,
 ) -> SampleResult:
     """Run the full BAM(/folder)/TSV → entropy bedgraphs pipeline for
     one ``SampleSpec``."""
@@ -150,6 +160,7 @@ def run_one_sample(
 
     tsv_path, bam_used = _ensure_tsv(
         spec, out_dir, fasta, threads, progress_cb, pct_cb,
+        status_cb=status_cb,
     )
 
     out_prefix = out_dir / f"{spec.label}_{entropy_mode}"
@@ -211,6 +222,7 @@ def run_pipeline(
     chroms: str = "",
     progress_cb: Callable[[str], None] | None = None,
     pct_cb: Callable[[float, str], None] | None = None,
+    status_cb: Callable[[str], None] | None = None,
 ) -> tuple[SampleResult, SampleResult | None]:
     """Run one or two samples through the pipeline.
 
@@ -227,6 +239,7 @@ def run_pipeline(
             methyl_threshold=methyl_threshold,
             threads=threads, chroms=chroms,
             progress_cb=progress_cb, pct_cb=pct_cb,
+            status_cb=status_cb,
         )
         return target, None
 
@@ -251,6 +264,7 @@ def run_pipeline(
         methyl_threshold=methyl_threshold,
         threads=threads, chroms=chroms,
         progress_cb=progress_cb, pct_cb=half_pct(0.0),
+        status_cb=status_cb,
     )
     if progress_cb:
         progress_cb("[pair] running TARGET sample")
@@ -263,5 +277,6 @@ def run_pipeline(
         methyl_threshold=methyl_threshold,
         threads=threads, chroms=chroms,
         progress_cb=progress_cb, pct_cb=half_pct(0.5),
+        status_cb=status_cb,
     )
     return target, control

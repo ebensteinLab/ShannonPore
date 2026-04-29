@@ -19,3 +19,7 @@ clawteam/*_ACCEPTED_ROUND
 clawteam/orchestrator_log.txt
 .env
 .last_session.json
+
+# Nested clones (don't accidentally commit a `git clone` made inside the repo)
+/nanoentropy/
+reference_files/

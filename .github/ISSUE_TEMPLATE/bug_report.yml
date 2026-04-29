@@ -1,0 +1,96 @@
+name: Bug report
+description: Report a reproducible problem with nanoentropy
+title: "[bug] <short description>"
+labels:
+  - bug
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in the fields below.
+        If the problem might be environment-related, paste the output of `nanoentropy doctor`.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Brief description
+      description: A clear and concise description of the bug.
+      placeholder: When I run X, Y happens instead of Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-vs-actual
+    attributes:
+      label: Expected vs actual behaviour
+      description: What did you expect, and what actually happened?
+      placeholder: |
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands or actions to reproduce the bug.
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+      render: bash
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: e.g. Ubuntu 22.04, macOS 14.5
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      placeholder: e.g. 3.10.12
+    validations:
+      required: true
+
+  - type: input
+    id: modkit-version
+    attributes:
+      label: modkit version
+      description: Output of `modkit --version`
+      placeholder: e.g. modkit 0.6.0
+    validations:
+      required: false
+
+  - type: input
+    id: r-version
+    attributes:
+      label: R version
+      description: Output of `R --version | head -n 1`
+      placeholder: e.g. R 4.4.1
+    validations:
+      required: false
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: nanoentropy doctor output
+      description: Paste the full output of `nanoentropy doctor` if available.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, or anything else that helps.
+    validations:
+      required: false

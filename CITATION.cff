@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "nanoentropy: Nanopore methylation entropy analysis toolkit"
+version: "4.0.0"
+date-released: "2026-04-29"
+type: software
+license: MIT
+repository-code: "https://github.com/uribertocchitau/nanoentropy"
+url: "https://github.com/uribertocchitau/nanoentropy"
+abstract: >-
+  nanoentropy is a Streamlit GUI and CLI for nanopore methylation entropy
+  analysis. It computes methylation entropy (ME), mean methylation level
+  (MML), and coverage bedgraphs from modkit-extracted CpG calls, performs
+  block segmentation, runs GO enrichment via an R bridge, and produces
+  track, scatter, and distribution plots. Three entropy modes are supported:
+  True-mC (5hmC -> C), Bisulfite-equivalent, and Ternary (3-state).
+authors:
+  - family-names: Bertocchi
+    given-names: Uri
+    email: uribertocchi@gmail.com
+    affiliation: "Tel Aviv University"
+  - family-names: Ebenstein
+    given-names: Yuval
+    affiliation: "Tel Aviv University"
+keywords:
+  - nanopore
+  - methylation
+  - entropy
+  - epigenetics
+  - bioinformatics
+  - 5hmC
+  - 5mC
+  - modkit
+  - streamlit

@@ -1,0 +1,48 @@
+name: Feature request
+description: Suggest a new capability or improvement
+title: "[feature] <short description>"
+labels:
+  - enhancement
+  - triage
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing an idea. The clearer the use-case, the easier it is to scope.
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation / use-case
+      description: What problem does this solve? Who benefits?
+      placeholder: As a researcher analysing X, I need to ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-ux
+    attributes:
+      label: Proposed UX
+      description: Describe how the user would interact with the feature (CLI flags, GUI controls, file outputs, etc.).
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Existing workarounds or other approaches you have looked at.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: contribute
+    attributes:
+      label: Willing to contribute?
+      description: Are you interested in opening a PR for this?
+      options:
+        - "Yes, I can submit a PR"
+        - "Maybe, with guidance"
+        - "No, requesting only"
+    validations:
+      required: true

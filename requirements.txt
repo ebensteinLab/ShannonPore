@@ -1,0 +1,25 @@
+# Pinned Python dependencies for nanoentropy v4.
+# Versions match what was working in the system Python 3.10.12 environment
+# at the time of v4 cut. Bit-for-bit reproducible install in any year.
+#
+# scipy bumped from 1.8.0 -> 1.11.4: 1.8.0 wants numpy<1.25 but the rest of
+# the stack pins numpy 1.26.4. 1.11.4 is the highest scipy that supports
+# Python 3.10 and numpy 1.26.
+
+streamlit==1.51.0
+pandas==2.2.3
+numpy==1.26.4
+duckdb==1.4.3
+matplotlib==3.8.4
+seaborn==0.13.2
+pyfaidx==0.8.1.2
+plotly==6.2.0
+tqdm==4.67.1
+scipy==1.11.4
+
+# Dev / QA
+pytest==8.3.3
+pytest-cov==5.0.0
+ruff==0.7.4
+black==24.10.0
+mypy==1.13.0

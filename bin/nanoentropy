@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# nanoentropy — bash entry point that wraps the Python CLI.
+#
+# After `pip install -e .` the [project.scripts] entry creates a
+# Python-launcher `nanoentropy` on PATH. This file is a fallback wrapper
+# that works WITHOUT installing the package — useful for one-shot use
+# from a fresh clone:
+#
+#     export PATH="$PWD/bin:$PATH"
+#     nanoentropy --help
+#
+# It activates the conda env if NANOENTROPY_ENV_NAME is set, or falls
+# back to the system Python interpreter.
+
+set -euo pipefail
+
+V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy_v4}"
+
+# Try to use the project conda env if it exists.
+if command -v micromamba >/dev/null 2>&1; then
+    if micromamba env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
+        exec micromamba run -n "$ENV_NAME" python -m src.cli "$@"
+    fi
+elif command -v conda >/dev/null 2>&1; then
+    if conda env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
+        exec conda run -n "$ENV_NAME" python -m src.cli "$@"
+    fi
+fi
+
+# Fallback: use whatever python3 is on PATH from inside the project root.
+cd "$V4_DIR"
+exec python3 -m src.cli "$@"

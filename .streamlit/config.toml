@@ -1,0 +1,23 @@
+# Custom Streamlit theme for nanoentropy.
+# Restrained, scientific aesthetic — high-contrast type, mono everywhere
+# data is shown, neutral chrome.
+
+[theme]
+base = "light"
+primaryColor = "#0f4c75"
+backgroundColor = "#fbfbfa"
+secondaryBackgroundColor = "#f0f0eb"
+textColor = "#1a1a1a"
+font = "sans serif"
+
+[server]
+maxUploadSize = 4000
+runOnSave = false
+headless = true
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true

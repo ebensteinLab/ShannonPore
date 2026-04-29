@@ -88,21 +88,42 @@ REF_DIR="${NANOENTROPY_REF_DIR:-$V4_DIR/reference_files}"
 log "Ensuring REFERENCE_DIR exists: $REF_DIR"
 mkdir -p "$REF_DIR"
 
-# Auto-download FASTAs / GTFs unless explicitly skipped or already populated.
+# Reference FASTAs are MULTI-GIGABYTE (hg38 ~3.2 GiB, mm10 ~2.8 GiB).
+# Auto-downloading by default would hang most installs, fill disks, and is
+# a really bad first-run experience — so the install is OPT-IN.
+#
+#   bash install.sh                                             # no FASTA download (default)
+#   NANOENTROPY_DOWNLOAD_REFERENCES=1 bash install.sh           # download both genomes
+#   NANOENTROPY_DOWNLOAD_REFERENCES=hg38 bash install.sh        # download just one
+#   NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh      # use existing refs
 HAS_HG38="$([[ -s "$REF_DIR/hg38.fa" && -s "$REF_DIR/hg38.fa.fai" ]] && echo yes || echo no)"
 HAS_MM10="$([[ -s "$REF_DIR/mm10.fa" && -s "$REF_DIR/mm10.fa.fai" ]] && echo yes || echo no)"
+
+DL_REQ="${NANOENTROPY_DOWNLOAD_REFERENCES:-0}"
 if [[ "$HAS_HG38" == "yes" && "$HAS_MM10" == "yes" ]]; then
     log "Reference FASTAs already present (hg38 + mm10)."
-elif [[ "${NANOENTROPY_SKIP_REFERENCES:-0}" == "1" ]]; then
-    warn "NANOENTROPY_SKIP_REFERENCES=1 — skipping FASTA download."
-    warn "Run: bash $V4_DIR/scripts/setup_references.sh   to populate later."
+elif [[ "$DL_REQ" == "0" || -z "$DL_REQ" ]]; then
+    log "Reference FASTAs not downloaded (default)."
+    log "  → To use the GUI / CLI you need a populated REFERENCE_DIR."
+    log "  → Either set NANOENTROPY_REF_DIR to your existing refs, OR run:"
+    log "      bash $V4_DIR/scripts/setup_references.sh                # both"
+    log "      bash $V4_DIR/scripts/setup_references.sh --genome hg38  # one"
 else
-    log "Downloading UCSC reference FASTAs + GTFs (hg38 ~3.2 GiB, mm10 ~2.8 GiB)..."
-    log "Set NANOENTROPY_SKIP_REFERENCES=1 to skip; or NANOENTROPY_REF_DIR to point at your own."
-    if RUN bash "$V4_DIR/scripts/setup_references.sh"; then
-        log "Reference download complete."
-    else
-        warn "Reference download incomplete. Re-run: bash $V4_DIR/scripts/setup_references.sh"
+    case "$DL_REQ" in
+        1|both|all)         DL_ARGS=() ;;
+        hg38)               DL_ARGS=(--genome hg38) ;;
+        mm10)               DL_ARGS=(--genome mm10) ;;
+        *) warn "NANOENTROPY_DOWNLOAD_REFERENCES=$DL_REQ — expected 1|hg38|mm10; skipping download."
+           DL_ARGS=("--noop") ;;
+    esac
+    if [[ "${DL_ARGS[0]:-}" != "--noop" ]]; then
+        log "Downloading UCSC reference FASTAs + GTFs (multi-GiB; this can take 30+ min)..."
+        if RUN bash "$V4_DIR/scripts/setup_references.sh" "${DL_ARGS[@]}"; then
+            log "Reference download complete."
+        else
+            warn "Reference download incomplete. Re-run later:"
+            warn "    bash $V4_DIR/scripts/setup_references.sh ${DL_ARGS[*]}"
+        fi
     fi
 fi
 export NANOENTROPY_REF_DIR="$REF_DIR"

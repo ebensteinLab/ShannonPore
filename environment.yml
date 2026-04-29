@@ -31,6 +31,7 @@ dependencies:
   - duckdb=1.4.3
   - tqdm=4.67.1
   - pyfaidx=0.8.1.2
+  - pysam=0.22.1   # selftest + tests/fixtures/build_tiny_bam.py
 
   # Pip-only packages
   - pip:

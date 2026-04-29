@@ -15,6 +15,30 @@ nanoentropy doctor      # auto-checks every dep + permission
 nanoentropy selftest    # synthetic-BAM end-to-end smoke test
 ```
 
+## Reference data (multi-GiB)
+
+The default `bash install.sh` does **not** download reference FASTAs —
+they're multi-GiB and hang most installs. You have three options for
+populating `REFERENCE_DIR`:
+
+```bash
+# 1. Use FASTAs you already have somewhere
+NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh
+
+# 2. Have install.sh fetch them
+NANOENTROPY_DOWNLOAD_REFERENCES=hg38 bash install.sh   # ~3.2 GiB
+NANOENTROPY_DOWNLOAD_REFERENCES=mm10 bash install.sh   # ~2.8 GiB
+NANOENTROPY_DOWNLOAD_REFERENCES=1    bash install.sh   # both
+
+# 3. Run install.sh now (skips refs), fetch later when you need them
+bash install.sh
+bash scripts/setup_references.sh --genome hg38
+```
+
+The `selftest` command does NOT need real references — it builds its
+own synthetic FASTA + BAM. So you can verify the install end-to-end
+before downloading anything multi-GiB.
+
 ## What `install.sh` does
 
 1. **Resolves a conda CLI** — uses `micromamba` if present; else `mamba`,
@@ -33,14 +57,16 @@ nanoentropy selftest    # synthetic-BAM end-to-end smoke test
    `~/.local/share/bash-completion/completions/nanoentropy` so tab
    completion works in subsequent shells.
 7. **Doctor** — runs `nanoentropy doctor` to verify Python version, all
-   10 pinned Python packages, modkit, `REFERENCE_DIR`, `RESULTS_DIR`
-   writability, and executable bits.
+   pinned Python packages, modkit, samtools, `REFERENCE_DIR`,
+   `RESULTS_DIR` writability, and executable bits.
 8. **Selftest** — runs `nanoentropy selftest` which synthesises a tiny
    FASTA + BAM with MM/ML methylation tags and pipes it through
    modkit → entropy → bedgraphs for `true_mc` and `bisulfite` modes.
 
 To skip the selftest (e.g. on a slow CI runner), set
-`NANOENTROPY_SKIP_SELFTEST=1` before `bash install.sh`.
+`NANOENTROPY_SKIP_SELFTEST=1` before `bash install.sh`. Reference FASTAs
+are NOT downloaded by default — see the *Reference data* section above
+for the three ways to populate them.
 
 ## What `nanoentropy doctor` checks
 

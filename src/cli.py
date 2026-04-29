@@ -382,6 +382,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "matplotlib": "3.8.4",
         "seaborn": "0.13.2",
         "pyfaidx": "0.8.1.2",
+        "pysam": "0.22.1",
         "plotly": "6.2.0",
         "tqdm": "4.67.1",
         "scipy": "1.11.4",

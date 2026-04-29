@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+- `install.sh` no longer auto-downloads ~6 GiB of FASTAs by default —
+  this hung most fresh installs. Reference downloads are now opt-in
+  via `NANOENTROPY_DOWNLOAD_REFERENCES=1|hg38|mm10`, or by running
+  `scripts/setup_references.sh` manually. See `docs/INSTALL.md`.
+- Added `pysam==0.22.1` to `environment.yml`, `requirements.txt`,
+  `pyproject.toml`, and the doctor's pinned-package check. `selftest`
+  imports pysam to build its synthetic BAM, so without this it would
+  fail immediately after a clean install.
+
 ## v0.1.0 — 2026-04-29
 
 ### Added

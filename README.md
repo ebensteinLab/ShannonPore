@@ -95,15 +95,15 @@ If both pass, the install is fully functional. See [docs/INSTALL.md](docs/INSTAL
 for the full verification flow.
 
 ```bash
-# After install — these work in any shell, no activation needed:
-bin/shannonpore-gui          # launch the Streamlit GUI
-bin/shannonpore --help       # the CLI
-
-# Or, in a fresh terminal after install (mamba shell init has run):
-mamba activate shannonpore
-streamlit run app.py
-shannonpore --help
+# After install — call from any shell, no activation needed:
+shannonpore-gui              # launch the Streamlit GUI
+shannonpore --help           # the CLI
 ```
+
+`install.sh` symlinks both wrappers into `~/.local/bin/`, so they're
+global commands. They use `mamba run` under the hood, which means you
+**never** need to `mamba activate shannonpore` — the env is resolved
+automatically.
 
 **Reference data**: by default the tool looks in `<repo>/reference_files/`
 for FASTAs + GTFs. Either populate that directory (run

@@ -10,10 +10,14 @@ reproduce the 2026 stack bit-for-bit.
 ```bash
 git clone https://github.com/uribertocchitau/shannonpore.git && cd shannonpore
 bash install.sh
-conda activate shannonpore
 shannonpore doctor      # auto-checks every dep + permission
 shannonpore selftest    # synthetic-BAM end-to-end smoke test
 ```
+
+After install, `shannonpore` and `shannonpore-gui` are global commands
+in any shell — `install.sh` symlinks them into `~/.local/bin/`. You
+**don't need** to `mamba activate shannonpore`; the wrappers use
+`mamba run` under the hood and resolve the env automatically.
 
 ## Reference data (multi-GiB)
 

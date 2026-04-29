@@ -152,6 +152,35 @@ if [[ -f "$V4_DIR/bin/shannonpore.bash-completion" ]]; then
     log "Bash completion installed → $COMPLETION_DIR/shannonpore"
 fi
 
+# ── Symlink wrappers into ~/.local/bin so users can call them globally ───
+#
+# Why: the wrappers use `mamba run -n shannonpore …` so they don't need
+# `mamba activate` (and therefore don't need shell init). Symlinking
+# them into ~/.local/bin makes `shannonpore` and `shannonpore-gui`
+# globally callable commands in any new shell — no `cd` to the repo,
+# no activation, no shell init dance.
+USER_BIN="$HOME/.local/bin"
+mkdir -p "$USER_BIN"
+for w in shannonpore shannonpore-gui; do
+    src="$V4_DIR/bin/$w"
+    dst="$USER_BIN/$w"
+    if [[ -L "$dst" || -e "$dst" ]]; then
+        rm -f "$dst"
+    fi
+    ln -s "$src" "$dst"
+    log "Linked $w → $dst"
+done
+
+# Warn if ~/.local/bin isn't on PATH so the user knows to add it.
+PATH_HAS_USER_BIN="no"
+case ":$PATH:" in *":$USER_BIN:"*) PATH_HAS_USER_BIN="yes" ;; esac
+if [[ "$PATH_HAS_USER_BIN" != "yes" ]]; then
+    warn "$USER_BIN is not on your PATH."
+    warn "Add this line to your shell rc to make 'shannonpore' globally callable:"
+    warn "    export PATH=\"\$HOME/.local/bin:\$PATH\""
+    warn "Or just call them by full path: $V4_DIR/bin/shannonpore-gui"
+fi
+
 # ── Initialise the user's shell so `mamba activate` works ────────────────
 # mamba 2.x refuses to mutate the parent shell unless `shell init` has
 # been run first; without this the install ends with a confusing
@@ -206,17 +235,16 @@ fi
 
 log ""
 log "═════════════════════════════════════════════════════════════════"
-log " Install complete. Try one of these — they all work right now,"
-log " no shell activation needed:"
+log " Install complete. From any shell, right now:"
 log ""
-log "   GUI :   $V4_DIR/bin/shannonpore-gui"
-log "   CLI :   $V4_DIR/bin/shannonpore --help"
+log "   shannonpore-gui          ← launch the Streamlit GUI"
+log "   shannonpore --help       ← the CLI"
 log ""
-log " After opening a NEW terminal you can also use the activated env:"
-log "   ${CONDA_BIN} activate $ENV_NAME"
-log "   streamlit run $V4_DIR/app.py"
-log "   shannonpore --help"
+log " Both work without 'mamba activate' because they call into the"
+log " conda env via 'mamba run' under the hood."
 log ""
-log " Tip: add bin/ to your PATH so the wrappers are global commands:"
-log "   echo 'export PATH=\"$V4_DIR/bin:\$PATH\"' >> ~/.${USER_SHELL:-bash}rc"
+if [[ "$PATH_HAS_USER_BIN" != "yes" ]]; then
+    log " (~/.local/bin isn't on your PATH — see the warning above and"
+    log "  use the full path '$V4_DIR/bin/shannonpore-gui' meanwhile.)"
+fi
 log "═════════════════════════════════════════════════════════════════"

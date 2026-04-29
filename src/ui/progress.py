@@ -16,6 +16,7 @@ straight in.
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from contextlib import AbstractContextManager
 from typing import Any
@@ -96,11 +97,9 @@ class CLIProgress(Progress):
             self._tqdm.set_postfix_str(msg, refresh=False)
 
     def close(self) -> None:
-        try:
-            # Snap to 100% on clean close.
+        # Snap to 100% on clean close.
+        with contextlib.suppress(OSError, ValueError):
             self._tqdm.update(max(0, 100 - self._last_pct))
-        except (OSError, ValueError):
-            pass
         self._tqdm.close()
 
 

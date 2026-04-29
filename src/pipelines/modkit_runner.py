@@ -87,7 +87,7 @@ def run_modkit_extract_minimal(
             tail = ""
             if os.path.exists(log_filepath):
                 try:
-                    with open(log_filepath, "rt", errors="replace", encoding="utf-8") as f:
+                    with open(log_filepath, errors="replace", encoding="utf-8") as f:
                         tail = "".join(f.readlines()[-120:])
                 except OSError as exc:
                     logger.warning("Could not read modkit log %s: %s", log_filepath, exc)

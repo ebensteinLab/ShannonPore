@@ -377,7 +377,7 @@ def concat_ternary_outputs(
             for chrom in chroms:
                 p = os.path.join(out_chrom_dir, f"{chrom}.{suffix}.bedgraph")
                 if os.path.exists(p):
-                    with open(p, "r") as fin:
+                    with open(p) as fin:
                         fout.write(fin.read())
 
 

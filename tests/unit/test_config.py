@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import importlib
-import os
 from pathlib import Path
 
 import pytest
@@ -23,7 +22,7 @@ def test_env_var_overrides_default_reference_dir(
     import src.config as cfg
     importlib.reload(cfg)
 
-    assert cfg.REFERENCE_DIR == fake_ref.resolve()
+    assert fake_ref.resolve() == cfg.REFERENCE_DIR
     assert "results" in str(cfg.RESULTS_DIR)
 
 

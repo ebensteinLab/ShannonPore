@@ -17,7 +17,6 @@ from pathlib import Path
 
 import pysam
 
-
 # Reference: a single 200-bp contig with 8 CpG sites at known positions.
 # Constructed so every CpG is on the + strand and well-separated.
 _CHROM = "chr_test"

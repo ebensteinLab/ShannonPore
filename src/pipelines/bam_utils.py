@@ -6,6 +6,7 @@ runtime dep (pysam is only used in test fixtures).
 
 from __future__ import annotations
 
+import contextlib
 import logging
 import os
 import shutil
@@ -103,7 +104,6 @@ def merge_sort_index_bams(
         if progress_cb:
             progress_cb(f"[bam] {step}/{n_steps} {label}")
 
-    work_dir = out_bam.parent
     merged = out_bam.with_name(out_bam.stem + ".unsorted.bam")
 
     if len(bams) > 1:
@@ -129,10 +129,8 @@ def merge_sort_index_bams(
     _run(sort_cmd, stream=progress_cb)
 
     if merged.exists():
-        try:
+        with contextlib.suppress(OSError):
             os.remove(merged)
-        except OSError:
-            pass
 
     advance("indexing")
     _run([samtools, "index", "-@", str(int(threads)), str(out_bam)],

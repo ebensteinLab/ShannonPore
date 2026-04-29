@@ -125,7 +125,7 @@ def ternary_prevalence_panel(
     if len(datasets) == 1:
         axes = [axes]
 
-    for ax, ds in zip(axes, datasets):
+    for ax, ds in zip(axes, datasets, strict=False):
         sub = prevalence_df[prevalence_df["Dataset"] == ds].reset_index(drop=True)
         if sub.empty:
             ax.text(0.5, 0.5, "No data", ha="center", va="center", transform=ax.transAxes)

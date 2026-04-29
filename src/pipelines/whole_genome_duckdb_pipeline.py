@@ -372,7 +372,7 @@ def concat_chrom_outputs(chroms: list[str], out_chrom_dir: str, out_prefix: str)
         for chrom in chroms:
             p = os.path.join(out_chrom_dir, f"{chrom}.{suffix}.bedgraph")
             if os.path.exists(p):
-                with open(p, "r", encoding="utf-8", errors="replace") as r:
+                with open(p, encoding="utf-8", errors="replace") as r:
                     dest_file.write(r.read())
 
     with open(out_cov, "w") as f_cov, open(out_mml, "w") as f_mml, open(out_me, "w") as f_me:

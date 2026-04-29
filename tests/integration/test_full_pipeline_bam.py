@@ -28,14 +28,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
 # pysam optional — without it we can't even build the fixture.
 pysam = pytest.importorskip("pysam")
 
 from tests.fixtures.build_tiny_bam import (  # noqa: E402
-    CPG_POSITIONS, build_tiny_fixture,
+    CPG_POSITIONS,
+    build_tiny_fixture,
 )
 
 V4_DIR = Path(__file__).resolve().parents[2]
@@ -325,9 +325,10 @@ def test_cli_run_bam_folder_merges_and_runs(
     tmp_path_factory, tmp_path: Path,
 ) -> None:
     """Folder of BAMs → samtools merge → modkit → entropy bedgraphs."""
-    pysam = pytest.importorskip("pysam")
+    pytest.importorskip("pysam")
     from tests.fixtures.build_tiny_bam import (
-        write_methylation_bam, write_reference_fasta,
+        write_methylation_bam,
+        write_reference_fasta,
     )
 
     fixture_dir = tmp_path_factory.mktemp("folder_fixture")

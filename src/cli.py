@@ -31,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import subprocess
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -45,9 +46,6 @@ from src.constants import (
     ENTROPY_MODES,
 )
 from src.io.bedgraph import read_bedgraph
-from src.io.roi_utils import parse_roi_file_flexible
-
-import subprocess  # noqa: E402  (used by doctor/selftest below)
 
 logger = logging.getLogger("shannonpore.cli")
 
@@ -431,9 +429,8 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     )
     for genome, status in reference_status().items():
         all_good = all(status.values())
-        missing = [k for k, v in status.items() if not v]
         detail = (
-            f"fasta + .fai + GTF present"
+            "fasta + .fai + GTF present"
             if all_good
             else f"not downloaded — {fix_hint}"
         )
@@ -518,7 +515,6 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         return 1
 
     project_root = Path(__file__).resolve().parent.parent
-    tests_dir = project_root / "tests"
     sys.path.insert(0, str(project_root))
     from tests.fixtures.build_tiny_bam import build_tiny_fixture
 

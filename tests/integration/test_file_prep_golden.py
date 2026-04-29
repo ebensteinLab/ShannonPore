@@ -127,7 +127,7 @@ def test_bam_fully_methylated_yields_mml_one_and_zero_entropy(
 
     assert len(cov) == len(edges), f"expected {len(edges)} cov rows"
     assert (cov["chrom"] == "chr_test").all()
-    assert list(zip(cov["start"], cov["end"])) == edges
+    assert list(zip(cov["start"], cov["end"], strict=False)) == edges
     assert (cov["value"] == N_READS).all(), \
         f"expected coverage {N_READS} per bin, got {cov['value'].tolist()}"
 

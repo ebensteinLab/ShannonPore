@@ -6,11 +6,10 @@ import logging
 import os
 import shutil
 from pathlib import Path
-from typing import Union
 
 logger = logging.getLogger(__name__)
 
-PathLike = Union[str, Path]
+PathLike = str | Path
 
 
 def validate_existing_path(path_value: PathLike, description: str) -> bool | str:

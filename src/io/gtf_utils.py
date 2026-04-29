@@ -6,7 +6,7 @@ from __future__ import annotations
 import gzip
 import logging
 import re
-from typing import IO, Tuple
+from typing import IO
 
 import pandas as pd
 
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 def _open_text_maybe_gz(path: str) -> IO[str]:
     if path.lower().endswith(".gz"):
         return gzip.open(path, "rt", errors="replace")
-    return open(path, "rt", errors="replace", encoding="utf-8")
+    return open(path, errors="replace", encoding="utf-8")
 
 
 _ATTR_RE = re.compile(r'(\S+)\s+"([^"]+)"\s*;')
@@ -83,7 +83,7 @@ def load_genes_from_gtf(gtf_path: str) -> pd.DataFrame:
 
 
 def get_genes_for_region(
-    gene_df: pd.DataFrame, chrom: str, xlim: Tuple[int, int]
+    gene_df: pd.DataFrame, chrom: str, xlim: tuple[int, int]
 ) -> pd.DataFrame:
     """Return genes whose intervals overlap `[xlim[0], xlim[1]]` on `chrom`."""
     cols = ["chr", "start", "end", "strand", "gene_name"]

@@ -116,7 +116,6 @@ def _sample_inputs(
 
 @show_error(user_message="File preparation failed. See traceback below.")
 def _run(out_dir: Path) -> dict:
-    import streamlit as st
 
     state = get_state()
     fp = state.file_prep

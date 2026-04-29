@@ -45,7 +45,7 @@ def plot_two_bedgraph_overlays(
     ax_top, ax_bottom, ax_genes = axes
 
     dfs_top = [smooth_bedgraph(f, chrom_filter=chrom, window_size=window_size) for f in top_files]
-    for df_, lbl in zip(dfs_top, ["Control MML", "Target MML"]):
+    for df_, lbl in zip(dfs_top, ["Control MML", "Target MML"], strict=False):
         if not df_.empty:
             ax_top.plot(df_["mid"], df_["smoothed_score"], label=lbl, linewidth=2)
     ax_top.set_ylabel("MML", fontsize=14)
@@ -53,7 +53,7 @@ def plot_two_bedgraph_overlays(
     ax_top.set_ylim([-0.05, 1.05])
 
     dfs_bottom = [smooth_bedgraph(f, chrom_filter=chrom, window_size=window_size) for f in bottom_files]
-    for df_, lbl in zip(dfs_bottom, ["Control ME", "Target ME"]):
+    for df_, lbl in zip(dfs_bottom, ["Control ME", "Target ME"], strict=False):
         if not df_.empty:
             ax_bottom.plot(df_["mid"], df_["smoothed_score"], label=lbl, linewidth=2)
     ax_bottom.set_ylabel("ME", fontsize=14)

@@ -368,7 +368,7 @@ def unroll_for_plotting(
             region["bin_edges"],
             region["mml_by_bin"],
             region["entropy_by_bin"],
-            region["coverage_by_bin"],
+            region["coverage_by_bin"], strict=False,
         ):
             if int(cov) >= int(coverage_threshold):
                 rows.append({

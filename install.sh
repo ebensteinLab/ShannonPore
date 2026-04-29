@@ -75,7 +75,10 @@ if ! "$CONDA_BIN" env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"
     err "Env '$ENV_NAME' was not created. Inspect the errors above and re-run."
 fi
 
-RUN() { "$CONDA_BIN" run -n "$ENV_NAME" "$@"; }
+# PYTHONNOUSERSITE=1 prevents `~/.local/lib/python3.10/site-packages` from
+# shadowing the conda env's packages — a common-and-confusing source of
+# "module not found" / "wrong version" errors on shared HPC accounts.
+RUN() { PYTHONNOUSERSITE=1 "$CONDA_BIN" run -n "$ENV_NAME" "$@"; }
 
 # ── Pip belt-and-braces ───────────────────────────────────────────────────
 if [[ -f "$REQ_TXT" ]]; then
@@ -138,7 +141,7 @@ export NANOENTROPY_REF_DIR="$REF_DIR"
 
 # ── Editable install (puts `nanoentropy` console script on PATH) ──────────
 log "Installing nanoentropy package (editable)..."
-RUN pip install --no-deps -e "$V4_DIR" \
+RUN pip install --no-deps --no-user -e "$V4_DIR" \
     || warn "editable install failed; CLI still usable as 'python -m src.cli'"
 
 # ── Bash completion ───────────────────────────────────────────────────────

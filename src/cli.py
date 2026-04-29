@@ -359,10 +359,15 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     import shutil
     import stat
 
-    checks: list[tuple[str, str, bool, str]] = []
+    # severity: "must"   — fails the install (broken state)
+    #           "advise" — informational; user-action item, never fails the install
+    checks: list[tuple[str, str, bool, str, str]] = []
 
-    def check(name: str, expected: str, ok: bool, detail: str = "") -> None:
-        checks.append((name, expected, ok, detail))
+    def check(
+        name: str, expected: str, ok: bool, detail: str = "",
+        severity: str = "must",
+    ) -> None:
+        checks.append((name, expected, ok, detail, severity))
 
     # ── Python version ──
     py = sys.version_info
@@ -430,9 +435,13 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         detail = (
             f"fasta + .fai + GTF present"
             if all_good
-            else f"missing: {', '.join(missing)} — {fix_hint}"
+            else f"not downloaded — {fix_hint}"
         )
-        check(f"refs:{genome}", "fasta+fai+gtf", all_good, detail)
+        # FASTA download is opt-in; missing it is "advise", not "must".
+        check(
+            f"refs:{genome}", "fasta+fai+gtf", all_good, detail,
+            severity="advise",
+        )
 
     # ── Results dir is writable ──
     try:
@@ -460,17 +469,30 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print(f"{'Component':<{width_n}}{'Expected':<{width_e}}{'OK':<5}Detail")
     print("─" * 80)
     failures = 0
-    for name, expected, ok, detail in checks:
-        flag = "✓" if ok else "✗"
-        if not ok:
+    advisories = 0
+    for name, expected, ok, detail, severity in checks:
+        if ok:
+            flag = "✓"
+        elif severity == "advise":
+            flag = "i"
+            advisories += 1
+        else:
+            flag = "✗"
             failures += 1
         print(f"{name:<{width_n}}{expected:<{width_e}}{flag:<5}{detail}")
     print("─" * 80)
 
-    if failures == 0:
+    if failures == 0 and advisories == 0:
         print("[OK] All checks passed. nanoentropy is ready to use.")
         return 0
-    print(f"[FAIL] {failures} check(s) failed. Run `bash install.sh` and re-check.")
+    if failures == 0:
+        # Only advisories — install is functional.
+        print(
+            f"[OK] Install is functional ({advisories} advisory item(s) — "
+            "see `i` rows above; not blockers)."
+        )
+        return 0
+    print(f"[FAIL] {failures} blocking check(s) failed. Run `bash install.sh` and re-check.")
     return 1
 
 

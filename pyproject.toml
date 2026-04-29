@@ -1,0 +1,95 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "nanoentropy"
+version = "0.1.0"
+description = "Streamlit GUI for nanopore methylation entropy analysis"
+readme = "README.md"
+requires-python = "==3.10.12"
+license = { text = "MIT" }
+authors = [
+    { name = "Uri Bertocchi", email = "uribertocchi@gmail.com" },
+]
+keywords = [
+    "nanopore",
+    "methylation",
+    "entropy",
+    "epigenetics",
+    "bioinformatics",
+    "5hmC",
+    "5mC",
+    "modkit",
+    "streamlit",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+[project.urls]
+Homepage = "https://github.com/uribertocchitau/nanoentropy"
+Repository = "https://github.com/uribertocchitau/nanoentropy"
+Issues = "https://github.com/uribertocchitau/nanoentropy/issues"
+Documentation = "https://github.com/uribertocchitau/nanoentropy#readme"
+
+dependencies = [
+    "streamlit==1.51.0",
+    "pandas==2.2.3",
+    "numpy==1.26.4",
+    "duckdb==1.4.3",
+    "matplotlib==3.8.4",
+    "seaborn==0.13.2",
+    "pyfaidx==0.8.1.2",
+    "plotly==6.2.0",
+    "tqdm==4.67.1",
+    "scipy==1.11.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "pytest-cov==5.0.0",
+    "ruff==0.7.4",
+    "black==24.10.0",
+    "mypy==1.13.0",
+]
+
+[project.scripts]
+nanoentropy = "src.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "." }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "smoke: fast smoke tests",
+    "unit: unit tests",
+    "integration: integration tests with fixtures",
+    "e2e: end-to-end Streamlit tests",
+    "slow: long-running tests",
+]
+addopts = "-ra --strict-markers"

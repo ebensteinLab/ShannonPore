@@ -1,0 +1,110 @@
+# bash completion for `nanoentropy`
+#
+# Install (one-shot):
+#   source /path/to/nanoentropy.bash-completion
+#
+# Install (permanent, current user):
+#   mkdir -p ~/.local/share/bash-completion/completions
+#   cp nanoentropy.bash-completion \
+#       ~/.local/share/bash-completion/completions/nanoentropy
+#
+# Install (permanent, system-wide):
+#   sudo cp nanoentropy.bash-completion \
+#       /etc/bash_completion.d/nanoentropy
+
+_nanoentropy_complete() {
+    local cur prev words cword
+    _init_completion -n : 2>/dev/null || {
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        prev="${COMP_WORDS[COMP_CWORD-1]}"
+        words=("${COMP_WORDS[@]}")
+        cword=$COMP_CWORD
+    }
+
+    local subcommands="extract entropy plot run doctor selftest"
+    local global_opts="--help --version"
+
+    # Find the subcommand (first non-flag word after `nanoentropy`)
+    local sub="" i
+    for (( i=1; i<cword; i++ )); do
+        if [[ "${words[i]}" != -* ]]; then
+            sub="${words[i]}"
+            break
+        fi
+    done
+
+    # Top-level: complete subcommands or global flags
+    if [[ -z "$sub" ]]; then
+        if [[ "$cur" == -* ]]; then
+            COMPREPLY=( $(compgen -W "$global_opts" -- "$cur") )
+        else
+            COMPREPLY=( $(compgen -W "$subcommands" -- "$cur") )
+        fi
+        return
+    fi
+
+    # Per-subcommand options
+    local opts=""
+    case "$sub" in
+        extract)
+            opts="--help --genome --fasta --threads --log-file -v --verbose"
+            ;;
+        entropy)
+            opts="--help --genome --fasta --threads --mode --cpgs-per-bin \
+                  --min-coverage --methyl-threshold --chroms --force \
+                  --work-dir -v --verbose"
+            ;;
+        plot)
+            opts="--help --x-bedgraph --y-bedgraph --x-label --y-label \
+                  --subsample --dist-kind --control-mml --target-mml \
+                  --control-me --target-me --gtf --chrom --start --end \
+                  --window -v --verbose"
+            ;;
+        run)
+            opts="--help --bam --tsv --out-dir --genome --fasta --threads \
+                  --mode --cpgs-per-bin --min-coverage --methyl-threshold \
+                  --chroms --force -v --verbose"
+            ;;
+        doctor|selftest)
+            opts="--help --include-ternary -v --verbose"
+            ;;
+    esac
+
+    # Value completers for known --options
+    case "$prev" in
+        --mode)
+            COMPREPLY=( $(compgen -W "true_mc bisulfite ternary" -- "$cur") )
+            return ;;
+        --genome)
+            COMPREPLY=( $(compgen -W "hg38 hg19 mm10" -- "$cur") )
+            return ;;
+        --dist-kind)
+            COMPREPLY=( $(compgen -W "violin box hist" -- "$cur") )
+            return ;;
+        --bam|--tsv|--fasta|--gtf|--x-bedgraph|--y-bedgraph|--control-mml|\
+        --target-mml|--control-me|--target-me|--include-bed|--log-file)
+            COMPREPLY=( $(compgen -f -- "$cur") )
+            return ;;
+        --out-dir|--work-dir)
+            COMPREPLY=( $(compgen -d -- "$cur") )
+            return ;;
+    esac
+
+    # `plot` takes a positional kind first
+    if [[ "$sub" == "plot" && "$cword" -ge 2 && "$cur" != -* ]]; then
+        local plot_word="${words[2]:-}"
+        if [[ "$cword" -eq 2 ]]; then
+            COMPREPLY=( $(compgen -W "tracks scatter hexbin distribution" -- "$cur") )
+            return
+        fi
+    fi
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $(compgen -W "$opts" -- "$cur") )
+    else
+        # Default: complete files
+        COMPREPLY=( $(compgen -f -- "$cur") )
+    fi
+}
+
+complete -F _nanoentropy_complete nanoentropy

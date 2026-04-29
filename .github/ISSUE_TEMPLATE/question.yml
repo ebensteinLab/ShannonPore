@@ -1,0 +1,36 @@
+name: Question
+description: Ask a usage question that does not fit the bug or feature templates
+title: "[question] <short description>"
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For general usage questions, please prefer GitHub Discussions when possible.
+        Use this template for focused questions that warrant a tracked issue.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What are you trying to accomplish, and what is unclear?
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+      description: Commands run, configs tested, error messages observed.
+      render: bash
+    validations:
+      required: true
+
+  - type: textarea
+    id: docs
+    attributes:
+      label: What documentation did you read?
+      description: README sections, docs/ pages, or external references you have already consulted.
+    validations:
+      required: false

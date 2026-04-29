@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.idea/
+.tmp_plots/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+results/
+# Adversarial review run artifacts — but keep README + prompt templates.
+clawteam/*.md
+!clawteam/README.md
+!clawteam/prompts/
+clawteam/*_FIXES_ROUND*_COMPLETE
+clawteam/*_ACCEPTED_ROUND
+clawteam/orchestrator_log.txt
+.env
+.last_session.json

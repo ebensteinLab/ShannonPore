@@ -22,4 +22,5 @@ clawteam/orchestrator_log.txt
 
 # Nested clones (don't accidentally commit a `git clone` made inside the repo)
 /nanoentropy/
+/shannonpore/
 reference_files/

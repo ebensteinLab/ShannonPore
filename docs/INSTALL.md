@@ -18,26 +18,31 @@ nanoentropy selftest    # synthetic-BAM end-to-end smoke test
 ## Reference data (multi-GiB)
 
 The default `bash install.sh` does **not** download reference FASTAs —
-they're multi-GiB and hang most installs. You have three options for
-populating `REFERENCE_DIR`:
+they're multi-GiB and hang most installs. The tool needs a populated
+`REFERENCE_DIR` only when you point it at real BAM/TSV data; `selftest`
+ships its own synthetic FASTA so you can verify the install end-to-end
+without fetching anything multi-GiB.
+
+`REFERENCE_DIR` defaults to `<repo>/reference_files/`. You only need
+to set `NANOENTROPY_REF_DIR` if you want it to point somewhere else
+(e.g. a shared lab volume). Three ways to populate it:
 
 ```bash
-# 1. Use FASTAs you already have somewhere
-NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh
-
-# 2. Have install.sh fetch them
+# 1. Have install.sh fetch into the default location
 NANOENTROPY_DOWNLOAD_REFERENCES=hg38 bash install.sh   # ~3.2 GiB
 NANOENTROPY_DOWNLOAD_REFERENCES=mm10 bash install.sh   # ~2.8 GiB
 NANOENTROPY_DOWNLOAD_REFERENCES=1    bash install.sh   # both
 
-# 3. Run install.sh now (skips refs), fetch later when you need them
+# 2. Run install.sh now (skips refs), fetch later
 bash install.sh
 bash scripts/setup_references.sh --genome hg38
+
+# 3. Use FASTAs you already have at a different path
+NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh
 ```
 
-The `selftest` command does NOT need real references — it builds its
-own synthetic FASTA + BAM. So you can verify the install end-to-end
-before downloading anything multi-GiB.
+You can also bypass `REFERENCE_DIR` entirely and pass `--fasta` to the
+CLI or use the "custom FASTA" field in the GUI per invocation.
 
 ## What `install.sh` does
 

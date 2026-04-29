@@ -89,14 +89,18 @@ for the full verification flow.
 # After install:
 conda activate nanoentropy
 
-# Set reference data path (FASTAs + GTFs)
-export NANOENTROPY_REF_DIR=/path/to/reference_files
-
 # Run the GUI
 streamlit run app.py
 # or the CLI
 nanoentropy --help
 ```
+
+**Reference data**: by default the tool looks in `<repo>/reference_files/`
+for FASTAs + GTFs. Either populate that directory (run
+`bash scripts/setup_references.sh --genome hg38`), pass `--fasta` /
+"custom FASTA" per invocation, or set `NANOENTROPY_REF_DIR` to a folder
+you already have. `selftest` doesn't need any of this — it builds its
+own synthetic FASTA.
 
 ## Usage
 

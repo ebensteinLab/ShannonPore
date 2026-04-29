@@ -76,7 +76,7 @@ bash install.sh
 The installer:
 
 1. Resolves a conda CLI (or installs micromamba — no admin needed).
-2. Creates the `nanoentropy_v4` environment from `conda-lock.yml`.
+2. Creates the `nanoentropy` environment from `conda-lock.yml`.
 3. `pip install -e .` so `nanoentropy` lands on `PATH`.
 4. Installs Bash completion to `~/.local/share/bash-completion/completions/`.
 5. Runs `nanoentropy doctor` (every pinned version, every permission).
@@ -87,7 +87,7 @@ for the full verification flow.
 
 ```bash
 # After install:
-conda activate nanoentropy_v4
+conda activate nanoentropy
 
 # Set reference data path (FASTAs + GTFs)
 export NANOENTROPY_REF_DIR=/path/to/reference_files

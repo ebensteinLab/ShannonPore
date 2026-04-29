@@ -15,7 +15,7 @@
 set -euo pipefail
 
 V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy_v4}"
+ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy}"
 
 # Try to use the project conda env if it exists.
 if command -v micromamba >/dev/null 2>&1; then

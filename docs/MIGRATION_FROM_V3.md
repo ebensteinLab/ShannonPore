@@ -93,9 +93,9 @@ BAMs that modkit extracts from.
 
 ## Migration checklist
 
-1. `cd v4 && bash install.sh` — produces `nanoentropy_v4` conda env.
+1. `cd v4 && bash install.sh` — produces `nanoentropy` conda env.
 2. `cp .env.example .env` and edit if your reference paths differ.
-3. `source .env && conda activate nanoentropy_v4`.
+3. `source .env && conda activate nanoentropy`.
 4. `nanoentropy doctor` (must exit 0).
 5. `nanoentropy selftest` (must exit 0).
 6. `streamlit run app.py` — verify both tabs render.
@@ -111,5 +111,5 @@ If v4 misbehaves:
 - v3 is fully intact. `cd ../v3 && streamlit run app.py` resumes the v3
   workflow.
 - v4 results live in `v4/results/`; they are independent of v3.
-- The conda env `nanoentropy_v4` can be removed without affecting v3:
-  `conda env remove -n nanoentropy_v4`.
+- The conda env `nanoentropy` can be removed without affecting v3:
+  `conda env remove -n nanoentropy`.

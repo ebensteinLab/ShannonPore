@@ -39,7 +39,7 @@ jobs:
         continue-on-error: true
         with:
           environment-file: environment.yml
-          environment-name: nanoentropy_v4
+          environment-name: nanoentropy
           cache-environment: true
           cache-downloads: true
           init-shell: bash

@@ -12,7 +12,7 @@
 set -euo pipefail
 
 V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy_v4}"
+ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy}"
 LOCKFILE="$V4_DIR/conda-lock.yml"
 ENV_YML="$V4_DIR/environment.yml"
 REQ_TXT="$V4_DIR/requirements.txt"

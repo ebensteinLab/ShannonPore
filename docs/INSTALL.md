@@ -10,7 +10,7 @@ reproduce the 2026 stack bit-for-bit.
 ```bash
 git clone https://github.com/uribertocchitau/nanoentropy.git && cd nanoentropy
 bash install.sh
-conda activate nanoentropy_v4
+conda activate nanoentropy
 nanoentropy doctor      # auto-checks every dep + permission
 nanoentropy selftest    # synthetic-BAM end-to-end smoke test
 ```
@@ -46,7 +46,7 @@ before downloading anything multi-GiB.
    `~/.local/bin` (no admin rights needed).
 2. **Creates the env** — from `conda-lock.yml` (preferred; bit-for-bit)
    or `environment.yml` (fallback; resolver may pick newer transitives).
-   Env name: `nanoentropy_v4`.
+   Env name: `nanoentropy`.
 3. **Pip belt-and-braces** — `pip install --no-deps -r requirements.txt`
    into the env to backstop any pip-only deps.
 4. **Permissions** — `chmod +x` on `install.sh`, `bin/nanoentropy`,
@@ -151,7 +151,7 @@ shell and tab-complete on `nanoentropy <Tab>`. Completes:
 
 ## Rolling back
 
-`conda env remove -n nanoentropy_v4` cleanly removes the v4 env without
+`conda env remove -n nanoentropy` cleanly removes the v4 env without
 touching any other env.
 
 ## Troubleshooting

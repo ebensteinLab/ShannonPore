@@ -46,7 +46,7 @@ err()  { printf '\033[1;31m[err]\033[0m %s\n'  "$*" >&2; exit 1; }
 
 command -v curl >/dev/null 2>&1     || err "curl not found"
 command -v gunzip >/dev/null 2>&1   || err "gunzip not found"
-command -v samtools >/dev/null 2>&1 || err "samtools not found (install nanoentropy_v4 env first)"
+command -v samtools >/dev/null 2>&1 || err "samtools not found (install nanoentropy env first)"
 
 mkdir -p "$REF_DIR"
 log "REFERENCE_DIR = $REF_DIR"

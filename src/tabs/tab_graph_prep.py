@@ -200,6 +200,8 @@ def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
         chrom=gp.region_chrom, start=int(gp.region_start), end=int(gp.region_end),
         control_mml=gp.control.mml_path, target_mml=gp.target.mml_path,
         control_me=gp.control.me_path, target_me=gp.target.me_path,
+        control_coverage=gp.control.coverage_path,
+        target_coverage=gp.target.coverage_path,
         label_a=gp.control.name or "Control",
         label_b=gp.target.name or "Target",
         color_a=gp.control.color, color_b=gp.target.color,
@@ -208,6 +210,19 @@ def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
         pad_bp=pad_bp,
         out_path=out_path,
     )
+
+
+# ─── UI helper: surface where a plot was saved ────────────────────────────
+
+def _show_saved_path(out: Path) -> None:
+    """Display the on-disk path of a just-rendered plot so users can
+    grab it for papers, share it, etc."""
+    import streamlit as st
+
+    if not out.exists():
+        return
+    size_kb = out.stat().st_size / 1024.0
+    st.success(f"Saved → `{out}`  ({size_kb:,.0f} KB)")
 
 
 # ─── Tab help text ────────────────────────────────────────────────────────
@@ -243,6 +258,7 @@ def render() -> None:
 
     out_dir = Path(ensure_writable_dir(str(RESULTS_DIR / "graph_prep"), "Plots out"))
     update_section("graph_prep", plots_dir=out_dir)
+    st.caption(f"📁 Plots saved to: `{out_dir}`")
 
     paths_loaded = _paired_paths_ready(gp)
     with st.expander(
@@ -294,6 +310,7 @@ def render() -> None:
             fig = _render_me_mml_scatter(gp, out, log_scale=log_scale_02)
             if fig is not None:
                 st.pyplot(fig)
+                _show_saved_path(out)
 
     st.markdown("---")
 
@@ -320,6 +337,7 @@ def render() -> None:
             fig = _render_triple_landscape(gp, out, log_scale=log_scale_03)
             if fig is not None:
                 st.pyplot(fig)
+                _show_saved_path(out)
 
     st.markdown("---")
 
@@ -393,6 +411,7 @@ def render() -> None:
             )
             if fig is not None:
                 st.pyplot(fig)
+                _show_saved_path(out)
 
     st.markdown("---")
 
@@ -528,3 +547,4 @@ def render() -> None:
             )
             if res and Path(res).exists():
                 st.image(str(res))
+                _show_saved_path(out)

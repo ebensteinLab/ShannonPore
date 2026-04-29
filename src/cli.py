@@ -220,6 +220,8 @@ def cmd_plot(args: argparse.Namespace) -> int:
             chrom=args.chrom, start=int(args.start), end=int(args.end),
             control_mml=args.control_mml, target_mml=args.target_mml,
             control_me=args.control_me, target_me=args.target_me,
+            control_coverage=args.control_coverage,
+            target_coverage=args.target_coverage,
             label_a=args.label_a, label_b=args.label_b,
             color_a=args.color_a, color_b=args.color_b,
             gtf_path=gtf,
@@ -735,6 +737,11 @@ def build_parser() -> argparse.ArgumentParser:
     p_pl.add_argument("--control-me", default=None)
     p_pl.add_argument("--target-mml", default=None)
     p_pl.add_argument("--target-me", default=None)
+    # Coverage is optional and only consumed by `tracks` (4th panel).
+    p_pl.add_argument("--control-coverage", default=None,
+                      help="(tracks only) coverage bedgraph for control.")
+    p_pl.add_argument("--target-coverage", default=None,
+                      help="(tracks only) coverage bedgraph for target.")
 
     # Sample labels + colours (carried into all plots)
     p_pl.add_argument("--label-a", default="Control",

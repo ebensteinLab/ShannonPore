@@ -150,8 +150,10 @@ def _plot_signal(
     ax, *, ctrl_df: pd.DataFrame, case_df: pd.DataFrame,
     label_a: str, label_b: str, color_a: str, color_b: str,
     ylabel: str, plot_lo: int, plot_hi: int, smooth_win: int,
+    ylim: tuple[float, float] | None = (0.0, 1.05),
 ) -> None:
     drew_anything = False
+    y_max_seen = 0.0
     for df, label, color in (
         (ctrl_df, label_a, color_a),
         (case_df, label_b, color_b),
@@ -164,6 +166,7 @@ def _plot_signal(
         ax.plot(x, y, color=color, lw=1.8, alpha=0.9, label=label)
         ax.fill_between(x, y, alpha=0.15, color=color)
         drew_anything = True
+        y_max_seen = max(y_max_seen, float(np.nanmax(y)) if y.size else 0.0)
 
     if not drew_anything:
         ax.text(
@@ -172,7 +175,11 @@ def _plot_signal(
             ha="center", va="center", fontsize=10, color="#888888",
         )
     ax.set_xlim(plot_lo, plot_hi)
-    ax.set_ylim(0, 1.05)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+    elif drew_anything:
+        # 5 % headroom so the line doesn't touch the top of the panel.
+        ax.set_ylim(0, max(1.0, y_max_seen) * 1.05)
     ax.set_ylabel(ylabel, fontsize=10)
     ax.legend(loc="upper right", fontsize=8)
     ax.grid(axis="y", alpha=0.2)
@@ -192,6 +199,8 @@ def plot_region_tracks(
     control_me: str | Path | None,
     target_mml: str | Path | None,
     target_me: str | Path | None,
+    control_coverage: str | Path | None = None,
+    target_coverage: str | Path | None = None,
     label_a: str = "Control",
     label_b: str = "Target",
     color_a: str = "#2980b9",
@@ -202,11 +211,15 @@ def plot_region_tracks(
     smooth_win: int = 5,
     out_path: str | Path,
 ) -> Path:
-    """Render the 3-panel region track figure.
+    """Render the 4-panel region track figure.
 
-    Top panel: every gene whose body overlaps the window, drawn with
-    exons + promoter + strand-arrows. Middle: smoothed ME (control vs
-    target). Bottom: smoothed MML (control vs target).
+    Panels (top to bottom):
+      1. gene structure — every gene overlapping the window, drawn with
+         exons + promoter + strand-arrows;
+      2. smoothed ME (control vs target);
+      3. smoothed MML (control vs target);
+      4. smoothed coverage (control vs target), if coverage bedgraphs
+         are supplied — otherwise the panel is omitted.
 
     The window is widened by ``pad_bp`` on each side so the gene body
     fits comfortably without flush-cutting promoters / exons.
@@ -222,22 +235,32 @@ def plot_region_tracks(
         structures, chrom, (plot_lo, plot_hi),
     )
 
-    # Read the four bedgraphs, restricted to the padded window.
+    # Read all bedgraphs, restricted to the padded window.
     ctrl_mml_df = _read_region(control_mml, chrom, plot_lo, plot_hi)
     case_mml_df = _read_region(target_mml, chrom, plot_lo, plot_hi)
     ctrl_me_df = _read_region(control_me, chrom, plot_lo, plot_hi)
     case_me_df = _read_region(target_me, chrom, plot_lo, plot_hi)
+    has_cov = bool(control_coverage) or bool(target_coverage)
+    if has_cov:
+        ctrl_cov_df = _read_region(control_coverage, chrom, plot_lo, plot_hi)
+        case_cov_df = _read_region(target_coverage, chrom, plot_lo, plot_hi)
 
-    # Tall enough for a gene panel that may stack a few rows.
+    # Tall enough for a gene panel that may stack a few rows + an
+    # optional coverage panel at the bottom.
     n_gene_rows = max(1, len(_stack_genes_by_row(region_genes)))
+    n_signal = 3 if has_cov else 2
+    height_ratios = [max(1.0, 0.8 * n_gene_rows)] + [2] * n_signal
     fig, axes = plt.subplots(
-        3, 1,
-        figsize=(14, 2.0 + 0.9 * n_gene_rows + 5.0),
-        height_ratios=[max(1.0, 0.8 * n_gene_rows), 2, 2],
+        1 + n_signal, 1,
+        figsize=(14, 2.0 + 0.9 * n_gene_rows + 2.5 * n_signal),
+        height_ratios=height_ratios,
         sharex=False,
         gridspec_kw={"hspace": 0.10},
     )
-    ax_genes, ax_me, ax_mml = axes
+    ax_genes = axes[0]
+    ax_me = axes[1]
+    ax_mml = axes[2]
+    ax_cov = axes[3] if has_cov else None
 
     _draw_gene_panel(ax_genes, region_genes, plot_lo, plot_hi)
     title_chr = chrom if chrom.startswith("chr") else f"chr{chrom}"
@@ -263,10 +286,22 @@ def plot_region_tracks(
         plot_lo=plot_lo, plot_hi=plot_hi, smooth_win=smooth_win,
     )
 
-    # The ME and MML panels share the x-axis with the gene panel.
-    ax_me.set_xlim(plot_lo, plot_hi)
-    ax_mml.set_xlim(plot_lo, plot_hi)
-    ax_mml.set_xlabel(f"Genomic position ({title_chr})", fontsize=10)
+    if ax_cov is not None:
+        _plot_signal(
+            ax_cov,
+            ctrl_df=ctrl_cov_df, case_df=case_cov_df,
+            label_a=label_a, label_b=label_b,
+            color_a=color_a, color_b=color_b,
+            ylabel="Coverage (reads)",
+            plot_lo=plot_lo, plot_hi=plot_hi, smooth_win=smooth_win,
+            ylim=None,  # coverage isn't 0–1 — autoscale
+        )
+
+    # All signal panels share the x-axis with the gene panel.
+    bottom_signal_ax = ax_cov if ax_cov is not None else ax_mml
+    for ax in (ax_me, ax_mml) + ((ax_cov,) if ax_cov is not None else ()):
+        ax.set_xlim(plot_lo, plot_hi)
+    bottom_signal_ax.set_xlabel(f"Genomic position ({title_chr})", fontsize=10)
 
     fig.tight_layout()
     out = Path(out_path)

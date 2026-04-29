@@ -13,7 +13,10 @@ dependencies:
   - pip=24.2
 
   # External binaries
-  - modkit=0.6.0
+  # Note: the bioconda package is `ont-modkit` (the on-disk binary is still
+  # `modkit`). v3 pinned `modkit=0.6.0` which doesn't exist as a recipe and
+  # broke the env-create step.
+  - ont-modkit=0.6.0
   - samtools=1.21
   - htslib=1.21
 

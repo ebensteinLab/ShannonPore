@@ -3,6 +3,17 @@
 ## Unreleased
 
 ### Fixed
+- **bioconda package name** — `environment.yml` pinned `modkit=0.6.0`
+  but bioconda's recipe is `ont-modkit` (the on-disk binary is still
+  `modkit`). Mamba aborted with `modkit =0.6.0 * does not exist
+  (perhaps a typo or a missing channel)` and the entire install
+  cascaded: env was never created, every subsequent `mamba run -n
+  nanoentropy_v4 …` failed with "Environment must first be created…".
+  Renamed to `ont-modkit=0.6.0`.
+- **install.sh hard-fails on env-create error** — previously errors
+  silently passed through and downstream steps emitted confusing
+  "Environment must first be created" messages. Now we abort with
+  a clear message at the source.
 - `install.sh` no longer auto-downloads ~6 GiB of FASTAs by default —
   this hung most fresh installs. Reference downloads are now opt-in
   via `NANOENTROPY_DOWNLOAD_REFERENCES=1|hg38|mm10`, or by running

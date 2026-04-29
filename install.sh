@@ -61,10 +61,18 @@ if [[ -f "$LOCKFILE" ]]; then
 elif [[ -f "$ENV_YML" ]]; then
     warn "conda-lock.yml missing; falling back to environment.yml (resolver may pick newer transitive deps)."
     log "Creating env '$ENV_NAME' from environment.yml..."
-    "$CONDA_BIN" env create -n "$ENV_NAME" -f "$ENV_YML" || \
-        "$CONDA_BIN" env update -n "$ENV_NAME" -f "$ENV_YML"
+    if ! "$CONDA_BIN" env create -n "$ENV_NAME" -f "$ENV_YML"; then
+        log "Env exists or create failed; trying env update instead..."
+        "$CONDA_BIN" env update -n "$ENV_NAME" -f "$ENV_YML" \
+            || err "Failed to create or update env '$ENV_NAME'. See errors above."
+    fi
 else
     err "Neither conda-lock.yml nor environment.yml present in $V4_DIR"
+fi
+
+# Sanity-check that the env actually exists before any RUN call.
+if ! "$CONDA_BIN" env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
+    err "Env '$ENV_NAME' was not created. Inspect the errors above and re-run."
 fi
 
 RUN() { "$CONDA_BIN" run -n "$ENV_NAME" "$@"; }

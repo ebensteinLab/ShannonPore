@@ -91,6 +91,7 @@ fi
 log "Ensuring executable bits on scripts..."
 chmod +x "$V4_DIR/install.sh" 2>/dev/null || true
 chmod +x "$V4_DIR/bin/shannonpore" 2>/dev/null || true
+chmod +x "$V4_DIR/bin/shannonpore-gui" 2>/dev/null || true
 chmod +x "$V4_DIR/scripts/setup_references.sh" 2>/dev/null || true
 
 # ── REFERENCE_DIR ─────────────────────────────────────────────────────────
@@ -151,6 +152,38 @@ if [[ -f "$V4_DIR/bin/shannonpore.bash-completion" ]]; then
     log "Bash completion installed → $COMPLETION_DIR/shannonpore"
 fi
 
+# ── Initialise the user's shell so `mamba activate` works ────────────────
+# mamba 2.x refuses to mutate the parent shell unless `shell init` has
+# been run first; without this the install ends with a confusing
+# "Shell not initialized" error the first time the user tries to
+# `mamba activate shannonpore`. We init their shell rc file once,
+# idempotently. The bin/shannonpore* wrappers don't need this — they
+# use `mamba run` — but interactive `streamlit run app.py` after
+# `mamba activate` does.
+USER_SHELL="$(basename "${SHELL:-/bin/bash}")"
+RC_FILE=""
+case "$USER_SHELL" in
+    bash) RC_FILE="$HOME/.bashrc" ;;
+    zsh)  RC_FILE="$HOME/.zshrc"  ;;
+    fish) RC_FILE="$HOME/.config/fish/config.fish" ;;
+esac
+
+if [[ -n "$RC_FILE" ]]; then
+    if grep -qE "(>>> mamba initialize|mamba shell hook|mamba shell init|conda initialize)" \
+            "$RC_FILE" 2>/dev/null; then
+        log "Shell ($USER_SHELL) already initialised for $CONDA_BIN."
+    else
+        log "Initialising $USER_SHELL so 'mamba activate $ENV_NAME' works in new shells..."
+        if "$CONDA_BIN" shell init --shell "$USER_SHELL" 2>&1 | tail -3; then
+            log "  Done. Open a new terminal or run:"
+            log "    eval \"\$($CONDA_BIN shell hook --shell $USER_SHELL)\""
+        else
+            warn "Auto-init failed. Run manually once:"
+            warn "    $CONDA_BIN shell init --shell $USER_SHELL"
+        fi
+    fi
+fi
+
 # ── Doctor ────────────────────────────────────────────────────────────────
 log "Running 'shannonpore doctor'..."
 if RUN python -m src.cli doctor; then
@@ -171,6 +204,19 @@ else
     log "Skipping selftest (SHANNONPORE_SKIP_SELFTEST=1)."
 fi
 
-log "Done."
-log "  GUI:  ${CONDA_BIN} activate $ENV_NAME && streamlit run $V4_DIR/app.py"
-log "  CLI:  ${CONDA_BIN} activate $ENV_NAME && shannonpore --help"
+log ""
+log "═════════════════════════════════════════════════════════════════"
+log " Install complete. Try one of these — they all work right now,"
+log " no shell activation needed:"
+log ""
+log "   GUI :   $V4_DIR/bin/shannonpore-gui"
+log "   CLI :   $V4_DIR/bin/shannonpore --help"
+log ""
+log " After opening a NEW terminal you can also use the activated env:"
+log "   ${CONDA_BIN} activate $ENV_NAME"
+log "   streamlit run $V4_DIR/app.py"
+log "   shannonpore --help"
+log ""
+log " Tip: add bin/ to your PATH so the wrappers are global commands:"
+log "   echo 'export PATH=\"$V4_DIR/bin:\$PATH\"' >> ~/.${USER_SHELL:-bash}rc"
+log "═════════════════════════════════════════════════════════════════"

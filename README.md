@@ -95,12 +95,13 @@ If both pass, the install is fully functional. See [docs/INSTALL.md](docs/INSTAL
 for the full verification flow.
 
 ```bash
-# After install:
-conda activate shannonpore
+# After install — these work in any shell, no activation needed:
+bin/shannonpore-gui          # launch the Streamlit GUI
+bin/shannonpore --help       # the CLI
 
-# Run the GUI
+# Or, in a fresh terminal after install (mamba shell init has run):
+mamba activate shannonpore
 streamlit run app.py
-# or the CLI
 shannonpore --help
 ```
 

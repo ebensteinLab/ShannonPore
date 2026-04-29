@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# shannonpore-gui — one-shot Streamlit launcher.
+#
+# Works without `mamba activate` first (which mamba 2.x makes painful on
+# fresh shells). Resolves the `shannonpore` conda env and runs streamlit
+# inside it via `mamba run` / `conda run`. Falls back to whatever
+# `streamlit` is on PATH if no conda CLI is found.
+#
+# Usage (from any shell, no activation needed):
+#
+#     bash bin/shannonpore-gui
+#
+# Or put bin/ on your PATH and run:
+#
+#     shannonpore-gui
+
+set -euo pipefail
+
+V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_NAME="${SHANNONPORE_ENV_NAME:-shannonpore}"
+APP="$V4_DIR/app.py"
+
+if [[ ! -f "$APP" ]]; then
+    echo "shannonpore-gui: cannot find app.py at $APP" >&2
+    exit 1
+fi
+
+# Prefer a conda-family CLI so we don't depend on the user's shell init.
+for cli in micromamba mamba conda; do
+    if command -v "$cli" >/dev/null 2>&1; then
+        # Confirm the env exists; if not, fall through to the next CLI.
+        if "$cli" env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
+            exec "$cli" run -n "$ENV_NAME" streamlit run "$APP" "$@"
+        fi
+    fi
+done
+
+# No conda env found — try whatever `streamlit` is already on PATH.
+if command -v streamlit >/dev/null 2>&1; then
+    echo "shannonpore-gui: no '$ENV_NAME' conda env found; falling back to system streamlit" >&2
+    exec streamlit run "$APP" "$@"
+fi
+
+cat >&2 <<EOF
+shannonpore-gui: cannot launch the GUI.
+  Tried micromamba/mamba/conda env '$ENV_NAME' — not found.
+  Tried system 'streamlit'                          — not on PATH.
+
+Run the installer first:
+    bash $V4_DIR/install.sh
+EOF
+exit 1

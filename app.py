@@ -55,71 +55,70 @@ inject()
 def _sidebar() -> None:
     state = get_state()
     with st.sidebar:
+        # ── Branding ────────────────────────────────────────────────
         st.markdown(
             f"""
-            <div style="padding:0.4rem 0 1.2rem;">
+            <div style="padding:0.4rem 0 0.6rem;">
               <div style="font-family:'IBM Plex Mono',monospace;
-                          font-size:0.78rem;letter-spacing:0.18em;
+                          font-size:0.82rem;letter-spacing:0.18em;
                           text-transform:uppercase;color:#0f4c75;
                           font-weight:600;">shannonpore</div>
               <div style="font-family:'IBM Plex Mono',monospace;
                           font-size:0.72rem;color:#7a7a78;
-                          margin-top:0.15rem;">v{__version__} · methylation entropy</div>
+                          margin-top:0.2rem;">
+                v{__version__} · methylation entropy
+              </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        st.markdown("### environment")
-        ref_ok = "✓" if REFERENCE_DIR.exists() else "✗"
-        st.markdown(
-            f"""
-            <div style="font-family:'IBM Plex Mono',monospace;font-size:0.78rem;
-                        line-height:1.5;color:#1a1a1a;">
-              <div><span style="color:#7a7a78;">ref_dir</span> {ref_ok}</div>
-              <div style="color:#7a7a78;font-size:0.7rem;
-                          margin-bottom:0.4rem;word-break:break-all;">
-                {REFERENCE_DIR}
-              </div>
-              <div><span style="color:#7a7a78;">results</span> ✓</div>
-              <div style="color:#7a7a78;font-size:0.7rem;word-break:break-all;">
-                {RESULTS_DIR}
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.divider()
+
+        # ── Environment ────────────────────────────────────────────
+        st.markdown("**Environment**")
+        ref_ok = "✅" if REFERENCE_DIR.exists() else "❌"
+        st.caption(f"{ref_ok} `ref_dir`")
+        st.code(str(REFERENCE_DIR), language="text")
+        st.caption("✅ `results`")
+        st.code(str(RESULTS_DIR), language="text")
 
         if not REFERENCE_DIR.exists():
             st.warning(
                 "REFERENCE_DIR does not exist. Set `SHANNONPORE_REF_DIR` "
-                "to your reference files directory."
+                "to your reference files directory.",
+                icon="⚠️",
             )
 
-        st.markdown("### session")
-        if st.button("reset state", use_container_width=True):
+        st.divider()
+
+        # ── Session controls ───────────────────────────────────────
+        if st.button("Reset state", use_container_width=True):
             reset_state()
             st.rerun()
 
+        if state.last_error:
+            st.error(f"Last error: {state.last_error}", icon="❗")
+
+        # ── Footer (in normal flow — NOT absolutely-positioned, so it
+        #    can never overlap session widgets above it) ────────────
+        st.divider()
         st.markdown(
             """
-            <div style="position:absolute;bottom:1rem;left:1rem;right:1rem;
-                        font-family:'IBM Plex Mono',monospace;font-size:0.66rem;
-                        color:#9a9a98;letter-spacing:0.04em;line-height:1.6;">
-              <div>ebenstein lab</div>
-              <div>tel aviv university</div>
-              <div style="margin-top:0.3rem;">
-                <a href="https://github.com/uribertocchitau/shannonpore"
-                   style="color:#9a9a98;text-decoration:none;">
-                  github.com/uribertocchitau/shannonpore</a>
-              </div>
+            <div style="font-family:'IBM Plex Mono',monospace;
+                        font-size:0.7rem;color:#9a9a98;
+                        letter-spacing:0.04em;line-height:1.7;
+                        padding-top:0.4rem;padding-bottom:1rem;">
+              ebenstein lab<br/>
+              tel aviv university<br/>
+              <a href="https://github.com/uribertocchitau/shannonpore"
+                 style="color:#9a9a98;text-decoration:none;">
+                github.com/uribertocchitau/shannonpore
+              </a>
             </div>
             """,
             unsafe_allow_html=True,
         )
-
-        if state.last_error:
-            st.error(f"last error: {state.last_error}")
 
 
 def main() -> None:

@@ -15,8 +15,13 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from src.config import GENOMES, RESULTS_DIR, assets_for
+from src.config import GENOMES, RESULTS_DIR, assets_for, ensure_genome_gtf
 from src.help_text import SEC_GP_REGION, SEC_GP_SAMPLES
+from src.io.gtf_utils import (
+    find_gene_by_name,
+    load_gene_structures,
+    search_gene_names,
+)
 from src.io.utils_io import ensure_writable_dir
 from src.plots.scatter import (
     load_paired_bedgraphs,
@@ -34,13 +39,45 @@ logger = logging.getLogger(__name__)
 
 # ─── GTF resolution ───────────────────────────────────────────────────────
 
-def _resolve_gtf(gp) -> Path | None:
-    """Return the bundled GTF for the chosen genome, or the user's custom
-    override if they provided one and it exists."""
+def _resolve_gtf(gp, *, allow_download: bool = True) -> Path | None:
+    """Return the GTF for the chosen genome.
+
+    Resolution order:
+      1. Custom override if the user supplied one that exists.
+      2. Bundled per-genome GTF if it's already on disk.
+      3. (If ``allow_download``) download the bundled GTF from UCSC on
+         the fly, with a Streamlit spinner.
+
+    Returns ``None`` if all three fail, so callers can still render
+    without a gene panel.
+    """
     if gp.gtf_path and Path(gp.gtf_path).exists():
         return Path(gp.gtf_path)
     bundled = assets_for(gp.genome).gtf_gz
-    return bundled if bundled.exists() else None
+    if bundled.exists() and bundled.stat().st_size > 0:
+        return bundled
+    if not allow_download:
+        return None
+
+    import streamlit as st
+
+    cached_attempt_key = f"_gtf_dl_attempted_{gp.genome}"
+    if st.session_state.get(cached_attempt_key) == "failed":
+        return None
+
+    with st.spinner(
+        f"First-time setup: downloading {gp.genome} RefSeq GTF "
+        f"(~30–40 MB) from UCSC…"
+    ):
+        try:
+            path = ensure_genome_gtf(gp.genome)
+        except RuntimeError as exc:
+            st.session_state[cached_attempt_key] = "failed"
+            st.error(str(exc))
+            return None
+    st.session_state[cached_attempt_key] = "ok"
+    st.success(f"GTF ready at `{path}`")
+    return path
 
 
 # ─── Sample input panel ───────────────────────────────────────────────────
@@ -386,17 +423,77 @@ def render() -> None:
         genome=genome,
         gtf_path=Path(gtf_override) if gtf_override else None,
     )
+    gp = state.graph_prep  # refresh after update_section
+
+    # Resolve GTF (downloads on first use). Surface state up-front so the
+    # user sees what's happening.
+    resolved_gtf = _resolve_gtf(gp)
+    if resolved_gtf is None:
+        st.warning(
+            "Could not resolve a GTF for this genome — gene panel and "
+            "gene-name search will be unavailable. Check internet "
+            "access, or set a custom GTF path above."
+        )
+    else:
+        st.caption(f"GTF: `{resolved_gtf}`")
+
+    # Gene-name search — populates chrom/start/end fields below.
+    if resolved_gtf is not None:
+        structures = load_gene_structures(str(resolved_gtf))
+        sg1, sg2 = st.columns([3, 1])
+        with sg1:
+            query = st.text_input(
+                "gene name (e.g. VHL, TP53, Bdnf) — exact or prefix",
+                value="", key="gene_search",
+                placeholder="type a gene symbol",
+            )
+        with sg2:
+            st.write("")  # spacer for vertical alignment
+            st.write("")
+            do_search = st.button("FIND", use_container_width=True, key="btn_gene_find")
+        if query and do_search:
+            hit = find_gene_by_name(structures, query)
+            if hit is None:
+                # Fall back to fuzzy / prefix search for hints.
+                candidates = search_gene_names(structures, query, limit=8)
+                if candidates:
+                    suggestion = ", ".join(g.name for g in candidates)
+                    st.warning(f"No exact match for '{query}'. Did you mean: {suggestion}?")
+                else:
+                    st.error(f"No gene named '{query}' found in the {gp.genome} GTF.")
+            else:
+                # Push to session_state BEFORE the chrom/start/end widgets
+                # render so they pick the new values up.
+                st.session_state["track_chrom"] = hit.chrom
+                st.session_state["track_start"] = int(hit.start)
+                st.session_state["track_end"] = int(hit.end)
+                update_section(
+                    "graph_prep",
+                    region_chrom=hit.chrom,
+                    region_start=int(hit.start),
+                    region_end=int(hit.end),
+                )
+                st.success(
+                    f"Loaded **{hit.name}** ({hit.chrom}:{hit.start:,}–{hit.end:,}, "
+                    f"strand `{hit.strand}`, {len(hit.exons)} exons)."
+                )
+                st.rerun()
 
     cc, cs, ce = st.columns([2, 2, 2])
     with cc:
-        chrom = st.text_input("chromosome", value=gp.region_chrom, placeholder="chr3")
+        chrom = st.text_input(
+            "chromosome", value=gp.region_chrom, placeholder="chr3",
+            key="track_chrom",
+        )
     with cs:
         start = st.number_input(
             "start", value=int(gp.region_start), min_value=0, step=1000,
+            key="track_start",
         )
     with ce:
         end = st.number_input(
             "end", value=int(gp.region_end), min_value=0, step=1000,
+            key="track_end",
         )
     update_section(
         "graph_prep",
@@ -415,17 +512,6 @@ def render() -> None:
             "padding around region (bp)", min_value=0, max_value=100_000,
             value=2000, step=500, key="track_pad",
         )
-
-    # Surface the GTF state explicitly so users know the bundled file is loaded.
-    resolved_gtf = _resolve_gtf(gp)
-    if resolved_gtf is None:
-        st.warning(
-            "No GTF found for this genome — gene panel will be empty. "
-            "Run `bash scripts/setup_references.sh` to download the bundled "
-            "refSeq GTF."
-        )
-    else:
-        st.caption(f"GTF: `{resolved_gtf}`")
 
     if st.button(
         "RENDER TRACK PLOT", type="primary", use_container_width=True,

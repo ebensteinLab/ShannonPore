@@ -37,7 +37,13 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from src import __version__
-from src.config import REFERENCE_DIR, RESULTS_DIR, assets_for, ensure_dirs
+from src.config import (
+    REFERENCE_DIR,
+    RESULTS_DIR,
+    assets_for,
+    ensure_dirs,
+    ensure_genome_gtf,
+)
 from src.constants import (
     ENTROPY_MODE_BISULFITE,
     ENTROPY_MODE_HELP,
@@ -198,11 +204,18 @@ def cmd_plot(args: argparse.Namespace) -> int:
                     f"--{required.replace('_', '-')} is required for "
                     f"plot kind 'tracks'."
                 )
-        # Default GTF: bundled per-genome unless the user passed --gtf.
-        gtf = args.gtf
+        # Default GTF: bundled per-genome (downloads on first use) unless
+        # the user passed --gtf.
+        gtf: str | None = args.gtf
         if not gtf:
-            bundled = assets_for(args.genome).gtf_gz
-            gtf = str(bundled) if bundled.exists() else None
+            try:
+                gtf = str(ensure_genome_gtf(args.genome))
+            except RuntimeError as exc:
+                logger.warning(
+                    "Could not download GTF for %s — gene panel will be empty: %s",
+                    args.genome, exc,
+                )
+                gtf = None
         plot_region_tracks(
             chrom=args.chrom, start=int(args.start), end=int(args.end),
             control_mml=args.control_mml, target_mml=args.target_mml,

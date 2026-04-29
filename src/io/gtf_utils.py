@@ -195,6 +195,53 @@ def load_gene_structures(
     return _load_gene_structures_cached(gtf_path or "", int(promoter_upstream))
 
 
+def find_gene_by_name(
+    structures: tuple[GeneStructure, ...],
+    name: str,
+) -> GeneStructure | None:
+    """Case-insensitive exact-name lookup. Returns the first hit, or None."""
+    if not name:
+        return None
+    target = name.strip().upper()
+    if not target:
+        return None
+    for g in structures:
+        if g.name.upper() == target:
+            return g
+    return None
+
+
+def search_gene_names(
+    structures: tuple[GeneStructure, ...],
+    query: str,
+    *,
+    limit: int = 20,
+) -> list[GeneStructure]:
+    """Case-insensitive prefix / substring search for autocomplete.
+
+    Exact matches rank first, then prefix matches, then substring.
+    """
+    if not query:
+        return []
+    q = query.strip().upper()
+    if not q:
+        return []
+    exact: list[GeneStructure] = []
+    prefix: list[GeneStructure] = []
+    substr: list[GeneStructure] = []
+    for g in structures:
+        n = g.name.upper()
+        if n == q:
+            exact.append(g)
+        elif n.startswith(q):
+            prefix.append(g)
+        elif q in n:
+            substr.append(g)
+        if len(exact) + len(prefix) + len(substr) >= limit * 3:
+            break
+    return (exact + prefix + substr)[:limit]
+
+
 def get_gene_structures_for_region(
     structures: tuple[GeneStructure, ...],
     chrom: str,

@@ -192,44 +192,6 @@ progress bar with live status.
 The CLI surfaces a coverage warning when ternary's pattern-space exceeds
 your `--min-coverage`. The GUI does the same in Tab 1.
 
-## Project layout
-
-```
-v4/
-├── app.py                       # Streamlit entrypoint (<200 lines)
-├── bin/
-│   ├── shannonpore              # bash launcher (works without pip install)
-│   └── shannonpore.bash-completion
-├── install.sh                   # idempotent installer
-├── conda-lock.yml               # bit-for-bit reproducible env (generated)
-├── environment.yml              # high-level conda spec
-├── pyproject.toml               # project metadata + pip pins
-├── requirements.txt             # pip-only deps
-├── src/
-│   ├── cli.py                   # argparse CLI: extract|entropy|plot|run|doctor|guide|examples|selftest
-│   ├── config.py                # env-var resolved paths
-│   ├── constants.py
-│   ├── help_text.py             # shared user-facing prose (GUI + CLI)
-│   ├── state.py                 # AppState · SampleSpec · TrackPlot
-│   ├── tabs/                    # Streamlit tab modules
-│   │   ├── tab_file_prep.py
-│   │   └── tab_graph_prep.py
-│   ├── pipelines/               # modkit · roi · whole_genome · ternary · bam_utils · orchestrator
-│   ├── plots/                   # matplotlib/plotly: tracks, scatter, distributions
-│   ├── io/                      # bedgraph, GTF, ROI, filesystem helpers
-│   └── ui/                      # error_handler, progress, widgets, style
-├── tests/
-│   ├── unit/                    # 65+ unit tests
-│   ├── integration/             # CLI, doctor/selftest, full-pipeline-on-BAM, pair, folder-merge
-│   ├── e2e/                     # Streamlit AppTest smoke
-│   └── fixtures/                # synthetic FASTA + BAM-with-MM/ML-tags builder
-└── docs/
-    ├── ARCHITECTURE.md
-    ├── INSTALL.md
-    ├── MIGRATION_FROM_V3.md
-    └── SESSION_STATE_SCHEMA.md
-```
-
 
 ## Citation
 

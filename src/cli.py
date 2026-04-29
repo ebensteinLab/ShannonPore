@@ -177,7 +177,6 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 # ─────────────────────────── plot ─────────────────────────────────────────
 
 def cmd_plot(args: argparse.Namespace) -> int:
-    from src.io.gtf_utils import load_genes_from_gtf
     from src.plots.scatter import (
         load_paired_bedgraphs,
         me_mml_scatter,
@@ -185,24 +184,35 @@ def cmd_plot(args: argparse.Namespace) -> int:
         triple_landscape,
     )
     from src.plots.theme import apply_default_style
-    from src.plots.tracks import plot_two_bedgraph_overlays
+    from src.plots.tracks import plot_region_tracks
 
     apply_default_style()
     out_path = Path(args.out_path).expanduser().resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     if args.kind == "tracks":
-        gtf_df = (
-            load_genes_from_gtf(args.gtf)
-            if args.gtf and Path(args.gtf).exists()
-            else None
-        )
-        plot_two_bedgraph_overlays(
-            top_files=[args.control_mml, args.target_mml],
-            bottom_files=[args.control_me, args.target_me],
-            gene_df=gtf_df,
+        # All four bedgraphs are required for the new gene-panel layout.
+        for required in ("control_mml", "control_me", "target_mml", "target_me"):
+            if not getattr(args, required):
+                raise SystemExit(
+                    f"--{required.replace('_', '-')} is required for "
+                    f"plot kind 'tracks'."
+                )
+        # Default GTF: bundled per-genome unless the user passed --gtf.
+        gtf = args.gtf
+        if not gtf:
+            bundled = assets_for(args.genome).gtf_gz
+            gtf = str(bundled) if bundled.exists() else None
+        plot_region_tracks(
             chrom=args.chrom, start=int(args.start), end=int(args.end),
-            out_path=str(out_path), window_size=int(args.window),
+            control_mml=args.control_mml, target_mml=args.target_mml,
+            control_me=args.control_me, target_me=args.target_me,
+            label_a=args.label_a, label_b=args.label_b,
+            color_a=args.color_a, color_b=args.color_b,
+            gtf_path=gtf,
+            smooth_win=int(args.window),
+            pad_bp=int(args.pad),
+            out_path=str(out_path),
         )
     elif args.kind in ("scatter", "arch", "landscape"):
         # All three need the four paired bedgraphs.
@@ -749,11 +759,21 @@ def build_parser() -> argparse.ArgumentParser:
                       help="Max paired lines drawn (default: 20000).")
 
     # tracks specifics
-    p_pl.add_argument("--gtf", default=None)
+    p_pl.add_argument(
+        "--gtf", default=None,
+        help="Override the bundled GTF (defaults to the GTF bundled for "
+             "--genome).",
+    )
+    p_pl.add_argument("--genome", default="hg38",
+                      choices=["hg38", "mm10"],
+                      help="Genome key for the bundled GTF (default: hg38).")
     p_pl.add_argument("--chrom", default="")
     p_pl.add_argument("--start", type=int, default=0)
     p_pl.add_argument("--end", type=int, default=0)
-    p_pl.add_argument("--window", type=int, default=25)
+    p_pl.add_argument("--window", type=int, default=5,
+                      help="Smoothing window for ME / MML signals (default: 5 bins).")
+    p_pl.add_argument("--pad", type=int, default=2000,
+                      help="Padding around the region in bp (default: 2000).")
 
     p_pl.add_argument("-v", "--verbose", action="count", default=0)
     p_pl.set_defaults(func=cmd_plot)

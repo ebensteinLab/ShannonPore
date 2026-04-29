@@ -301,50 +301,7 @@ def triple_landscape(
     return fig
 
 
-# ─── Plot 3: paired-bin landscape with direction arrows ─────────────────
-
-_ARROW_STYLE = {
-    "y_center": 0.50,
-    "x_offset": 0.08,
-    "big_len": 0.16,
-    "big_lw": 4.5,
-    "big_head": 35,
-    "big_color": "#000000",
-    "small_len": 0.16 * 0.65,
-    "small_lw": 2.5,
-    "small_head": 22,
-    "small_color": "#555555",
-    "n_text_gap": 0.04,
-    "n_fontsize_big": 11,
-    "n_fontsize_small": 10,
-    "n_fontweight": "bold",
-    "zorder_arrow": 15,
-    "zorder_text": 16,
-}
-
-
-def _draw_vertical_arrow(
-    ax, x, y_center, direction, length, lw, head, color, n,
-    fontsize, fontweight, n_gap, z_arrow, z_text,
-) -> None:
-    ax.annotate(
-        "",
-        xy=(x, y_center + direction * length),
-        xytext=(x, y_center - direction * length),
-        arrowprops={
-            "arrowstyle": "-|>", "color": color, "lw": lw,
-            "mutation_scale": head, "shrinkA": 0, "shrinkB": 0,
-        },
-        zorder=z_arrow,
-    )
-    side = -1 if x < 0.5 else +1
-    ax.text(
-        x + side * n_gap, y_center, f"n={n:,}",
-        ha="left" if side > 0 else "right",
-        va="center", fontsize=fontsize, fontweight=fontweight,
-        color=color, zorder=z_text,
-    )
-
+# ─── Plot 3: paired-bin landscape ────────────────────────────────────────
 
 def _apply_filter(
     df: pd.DataFrame, dim: FilterDim, op: FilterOp, value: float,
@@ -387,24 +344,19 @@ def paired_landscape(
     filter_b_op: FilterOp = ">",
     filter_b_value: float = 0.4,
     max_lines: int = 20_000,
-    arrow_style: dict | None = None,
     out_path: Path | str | None = None,
 ) -> plt.Figure:
-    """Paired-line scatter with direction arrows.
+    """Paired-line scatter (filtered).
 
     Each kept bin is drawn as a faint line from
     ``(mml_a, me_a) → (mml_b, me_b)``, plus two small dot scatters
     coloured by sample. The theoretical entropy arch is drawn on top.
 
-    The big black arrow points in the direction (up = ME increased,
-    down = ME decreased) where MORE bins moved; the small grey arrow
-    points the opposite way. Numbers next to each arrow give the bin
-    count for each direction.
+    Bin counts (Δ ME ↑ / Δ ME ↓) appear in a caption below the axes
+    rather than as in-plot arrows.
 
     Filters are AND-ed; pass ``filter_*_dim=None`` to disable.
     """
-    style = {**_ARROW_STYLE, **(arrow_style or {})}
-
     sub = df.copy()
     if filter_a_dim is not None:
         sub = _apply_filter(sub, filter_a_dim, filter_a_op, filter_a_value)
@@ -412,7 +364,8 @@ def paired_landscape(
         sub = _apply_filter(sub, filter_b_dim, filter_b_op, filter_b_value)
 
     n_bins = len(sub)
-    fig, ax = plt.subplots(figsize=(9, 7))
+    # Slightly taller than 1:1 so the caption row below has breathing room.
+    fig, ax = plt.subplots(figsize=(9, 7.6))
 
     if n_bins == 0:
         ax.text(
@@ -460,40 +413,11 @@ def paired_landscape(
         label="Theoretical arch",
     )
 
-    # Direction arrows on the bin-count for ΔME
+    # Bin-count caption (outside the plot, so the points stay clean).
     dme = (sub["me_b"] - sub["me_a"]).to_numpy()
     n_up = int((dme > 0).sum())
     n_down = int((dme < 0).sum())
-
-    cy = style["y_center"]
-    x_up = 0.5 - style["x_offset"]
-    x_down = 0.5 + style["x_offset"]
-
-    if n_up >= n_down:
-        big_n, small_n = n_up, n_down
-        big_x, small_x = x_up, x_down
-        big_dir, small_dir = +1, -1
-    else:
-        big_n, small_n = n_down, n_up
-        big_x, small_x = x_down, x_up
-        big_dir, small_dir = -1, +1
-
-    _draw_vertical_arrow(
-        ax, big_x, cy, big_dir,
-        length=style["big_len"], lw=style["big_lw"], head=style["big_head"],
-        color=style["big_color"], n=big_n,
-        fontsize=style["n_fontsize_big"], fontweight=style["n_fontweight"],
-        n_gap=style["n_text_gap"],
-        z_arrow=style["zorder_arrow"], z_text=style["zorder_text"],
-    )
-    _draw_vertical_arrow(
-        ax, small_x, cy, small_dir,
-        length=style["small_len"], lw=style["small_lw"], head=style["small_head"],
-        color=style["small_color"], n=small_n,
-        fontsize=style["n_fontsize_small"], fontweight=style["n_fontweight"],
-        n_gap=style["n_text_gap"],
-        z_arrow=style["zorder_arrow"], z_text=style["zorder_text"],
-    )
+    n_zero = int((dme == 0).sum())
 
     # Title summarising filters
     title_parts = []
@@ -510,8 +434,22 @@ def paired_landscape(
     ax.set_ylabel("Entropy (ME)")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1.05)
-    ax.legend(loc="best")
+    ax.legend(loc="upper left")
+
     fig.tight_layout()
+    # Make room at the bottom for the caption block.
+    fig.subplots_adjust(bottom=0.18)
+    caption = (
+        f"Δ ME ↑ ({label_b} > {label_a}):  n = {n_up:,}        "
+        f"Δ ME ↓ ({label_b} < {label_a}):  n = {n_down:,}"
+    )
+    if n_zero:
+        caption += f"        Δ ME = 0:  n = {n_zero:,}"
+    fig.text(
+        0.5, 0.04, caption,
+        ha="center", va="bottom",
+        fontsize=11, fontweight="bold", color="#222222",
+    )
 
     if out_path:
         fig.savefig(out_path, dpi=200, bbox_inches="tight")

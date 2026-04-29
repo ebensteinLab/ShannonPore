@@ -1,12 +1,13 @@
 """Tab 2 — Graph Preparation.
 
-Three plot families on top of the user's chosen samples:
-  * tracks            — control & target MML/ME along a genomic window
+Four plot families on top of the user's chosen samples:
   * ME / MML scatter  — 2D-histogram of control_value vs target_value
   * arch landscape    — A | B | (B − A) MML × ME density with the
                         theoretical entropy arch
-  * paired landscape  — paired-line scatter with direction arrows on
-                        a configurable bin filter
+  * paired landscape  — paired-line scatter with bin-shift counts
+                        on a configurable two-filter AND condition
+  * region track plot — gene structure (exons + promoter + arrows)
+                        plus smoothed ME and MML signals
 """
 
 from __future__ import annotations
@@ -14,9 +15,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from src.config import RESULTS_DIR
+from src.config import GENOMES, RESULTS_DIR, assets_for
 from src.help_text import SEC_GP_REGION, SEC_GP_SAMPLES
-from src.io.gtf_utils import load_genes_from_gtf
 from src.io.utils_io import ensure_writable_dir
 from src.plots.scatter import (
     load_paired_bedgraphs,
@@ -25,11 +25,22 @@ from src.plots.scatter import (
     triple_landscape,
 )
 from src.plots.theme import apply_default_style
-from src.plots.tracks import plot_two_bedgraph_overlays
+from src.plots.tracks import plot_region_tracks
 from src.state import get_state, update_section
 from src.ui.error_handler import show_error
 
 logger = logging.getLogger(__name__)
+
+
+# ─── GTF resolution ───────────────────────────────────────────────────────
+
+def _resolve_gtf(gp) -> Path | None:
+    """Return the bundled GTF for the chosen genome, or the user's custom
+    override if they provided one and it exists."""
+    if gp.gtf_path and Path(gp.gtf_path).exists():
+        return Path(gp.gtf_path)
+    bundled = assets_for(gp.genome).gtf_gz
+    return bundled if bundled.exists() else None
 
 
 # ─── Sample input panel ───────────────────────────────────────────────────
@@ -93,26 +104,6 @@ def _load_paired(gp):
 
 # ─── Renderers (decorated with show_error so traceback shows on screen) ──
 
-@show_error(user_message="Track plot failed.")
-def _render_tracks(state, out_path: Path, window: int) -> Path | None:
-    gp = state.graph_prep
-    if not _paired_paths_ready(gp):
-        return None
-    gtf_df = (
-        load_genes_from_gtf(str(gp.gtf_path))
-        if gp.gtf_path and Path(gp.gtf_path).exists()
-        else None
-    )
-    plot_two_bedgraph_overlays(
-        top_files=[str(gp.control.mml_path), str(gp.target.mml_path)],
-        bottom_files=[str(gp.control.me_path), str(gp.target.me_path)],
-        gene_df=gtf_df,
-        chrom=gp.region_chrom, start=gp.region_start, end=gp.region_end,
-        out_path=str(out_path), window_size=window,
-    )
-    return out_path
-
-
 @show_error(user_message="ME / MML scatter failed.")
 def _render_me_mml_scatter(gp, out_path: Path, log_scale: bool):
     df = _load_paired(gp)
@@ -164,22 +155,40 @@ def _render_paired_landscape(
     )
 
 
+@show_error(user_message="Track plot failed.")
+def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
+    if not _paired_paths_ready(gp):
+        return None
+    return plot_region_tracks(
+        chrom=gp.region_chrom, start=int(gp.region_start), end=int(gp.region_end),
+        control_mml=gp.control.mml_path, target_mml=gp.target.mml_path,
+        control_me=gp.control.me_path, target_me=gp.target.me_path,
+        label_a=gp.control.name or "Control",
+        label_b=gp.target.name or "Target",
+        color_a=gp.control.color, color_b=gp.target.color,
+        gtf_path=_resolve_gtf(gp),
+        smooth_win=smooth_win,
+        pad_bp=pad_bp,
+        out_path=out_path,
+    )
+
+
 # ─── Tab help text ────────────────────────────────────────────────────────
 
 _TAB_HELP = """\
-Three plot families compare your control and target bedgraphs:
+Four plot families compare your control and target bedgraphs:
 
-* **Track plot** — control & target MML/ME along a genomic region, with
-  optional gene panel from a GTF.
 * **ME / MML scatter** — 2D-histogram of control vs target for each
   metric. Toggle linear / log colour scale.
 * **Arch landscape** — three panels (control, target, target − control)
   showing density on the MML × ME plane with the theoretical
   binary-entropy arch overlaid.
 * **Paired landscape** — pairs of bins drawn as faint lines from
-  control → target, with direction arrows showing how many bins moved
-  up vs down in entropy. Filter by `MML`, `|dMML|`, `ME`, or `|dME|`
-  with a configurable threshold.
+  control → target with a configurable two-condition filter. The bin
+  counts that gained vs lost entropy appear in a caption below the plot.
+* **Region track plot** — gene structure (exons, promoter, strand
+  arrows) plus smoothed ME and MML signals across a genomic interval.
+  The bundled hg38 / mm10 GTF is loaded automatically.
 
 Bedgraph paths are auto-populated after a successful run on the **File
 Preparation** tab. Sample labels and colours flow through to every plot.
@@ -225,50 +234,13 @@ def render() -> None:
     with c2:
         _track_inputs(state, "target")
 
-    # ── 02 · region (track plot) ─────────────────────────────────
-    st.markdown("### 02 · region (track plot)")
-    _section_caption(SEC_GP_REGION)
-    cc, cs, ce = st.columns([2, 2, 2])
-    with cc:
-        chrom = st.text_input("chromosome", value=gp.region_chrom, placeholder="chr1")
-    with cs:
-        start = st.number_input(
-            "start", value=int(gp.region_start), min_value=0, step=1000,
-        )
-    with ce:
-        end = st.number_input(
-            "end", value=int(gp.region_end), min_value=0, step=1000,
-        )
-    update_section(
-        "graph_prep",
-        region_chrom=chrom or "",
-        region_start=int(start), region_end=int(end),
-    )
-    gtf = st.text_input("GTF (optional, gene panel)", value=str(gp.gtf_path or ""))
-    update_section("graph_prep", gtf_path=Path(gtf) if gtf else None)
-
-    window = st.slider("smoothing window (bins)", 1, 200, 25)
-    if st.button(
-        "RENDER TRACK PLOT", type="primary", use_container_width=True,
-        key="btn_tracks",
-    ):
-        if not chrom or end <= start:
-            st.error("specify a valid chrom / start / end")
-        else:
-            out = out_dir / f"tracks_{chrom}_{int(start)}_{int(end)}.png"
-            res = _render_tracks(state, out, window=window)
-            if res and Path(res).exists():
-                st.image(str(res))
-
-    st.markdown("---")
-
-    # ── 03 · ME / MML scatter ─────────────────────────────────────
-    st.markdown("### 03 · ME / MML scatter")
+    # ── 02 · ME / MML scatter ─────────────────────────────────────
+    st.markdown("### 02 · ME / MML scatter")
     _section_caption(
         "Two side-by-side 2D-histograms: control vs target for MML and ME. "
         "The dashed line is y = x (perfect agreement)."
     )
-    log_scale_03 = st.toggle(
+    log_scale_02 = st.toggle(
         "log10 colour scale",
         value=True,
         key="me_mml_log",
@@ -281,21 +253,21 @@ def render() -> None:
         if not paths_loaded:
             st.error("control and target MML + ME bedgraphs all required")
         else:
-            out = out_dir / f"me_mml_{'log' if log_scale_03 else 'linear'}.png"
-            fig = _render_me_mml_scatter(gp, out, log_scale=log_scale_03)
+            out = out_dir / f"me_mml_{'log' if log_scale_02 else 'linear'}.png"
+            fig = _render_me_mml_scatter(gp, out, log_scale=log_scale_02)
             if fig is not None:
                 st.pyplot(fig)
 
     st.markdown("---")
 
-    # ── 04 · arch landscape ───────────────────────────────────────
-    st.markdown("### 04 · arch landscape")
+    # ── 03 · arch landscape ───────────────────────────────────────
+    st.markdown("### 03 · arch landscape")
     _section_caption(
         "Three panels (control, target, target − control) showing density "
         "on the MML × ME plane with the theoretical binary-entropy arch "
         "overlaid."
     )
-    log_scale_04 = st.toggle(
+    log_scale_03 = st.toggle(
         "log10 colour scale",
         value=True,
         key="arch_log",
@@ -307,19 +279,19 @@ def render() -> None:
         if not paths_loaded:
             st.error("control and target MML + ME bedgraphs all required")
         else:
-            out = out_dir / f"arch_{'log' if log_scale_04 else 'linear'}.png"
-            fig = _render_triple_landscape(gp, out, log_scale=log_scale_04)
+            out = out_dir / f"arch_{'log' if log_scale_03 else 'linear'}.png"
+            fig = _render_triple_landscape(gp, out, log_scale=log_scale_03)
             if fig is not None:
                 st.pyplot(fig)
 
     st.markdown("---")
 
-    # ── 05 · paired landscape ─────────────────────────────────────
-    st.markdown("### 05 · paired landscape")
+    # ── 04 · paired landscape ─────────────────────────────────────
+    st.markdown("### 04 · paired landscape")
     _section_caption(
         "Paired-line scatter from control → target on the MML × ME plane. "
         "Configure two AND-ed filters to keep only the bins of interest. "
-        "The two arrows show how many filtered bins gained vs lost entropy."
+        "Bin counts (Δ ME ↑ / Δ ME ↓) are shown below the plot."
     )
 
     dim_options = ["off", "MML", "|dMML|", "ME", "|dME|"]
@@ -384,3 +356,89 @@ def render() -> None:
             )
             if fig is not None:
                 st.pyplot(fig)
+
+    st.markdown("---")
+
+    # ── 05 · region (track plot) ─────────────────────────────────
+    st.markdown("### 05 · region (track plot)")
+    _section_caption(SEC_GP_REGION)
+
+    g1, g2 = st.columns([1, 3])
+    with g1:
+        # Pull a sensible default from FilePrepState if the user hasn't
+        # picked a genome here yet.
+        default_genome = gp.genome or state.file_prep.genome or "hg38"
+        genome_idx = list(GENOMES).index(default_genome) if default_genome in GENOMES else 0
+        genome = st.selectbox(
+            "genome", options=list(GENOMES), index=genome_idx,
+            key="track_genome",
+            help="Bundled GTF (refSeq) loads automatically for the chosen genome.",
+        )
+    with g2:
+        gtf_override = st.text_input(
+            "custom GTF (optional, overrides bundled)",
+            value=str(gp.gtf_path or ""),
+            key="track_gtf_override",
+            placeholder="leave empty to use the bundled hg38 / mm10 GTF",
+        )
+    update_section(
+        "graph_prep",
+        genome=genome,
+        gtf_path=Path(gtf_override) if gtf_override else None,
+    )
+
+    cc, cs, ce = st.columns([2, 2, 2])
+    with cc:
+        chrom = st.text_input("chromosome", value=gp.region_chrom, placeholder="chr3")
+    with cs:
+        start = st.number_input(
+            "start", value=int(gp.region_start), min_value=0, step=1000,
+        )
+    with ce:
+        end = st.number_input(
+            "end", value=int(gp.region_end), min_value=0, step=1000,
+        )
+    update_section(
+        "graph_prep",
+        region_chrom=chrom or "",
+        region_start=int(start), region_end=int(end),
+    )
+
+    sw, pw = st.columns(2)
+    with sw:
+        smooth_win = st.slider(
+            "signal smoothing (bins)", 1, 50, 5, key="track_smooth",
+            help="Width of the uniform filter applied to ME and MML signals.",
+        )
+    with pw:
+        pad_bp = st.number_input(
+            "padding around region (bp)", min_value=0, max_value=100_000,
+            value=2000, step=500, key="track_pad",
+        )
+
+    # Surface the GTF state explicitly so users know the bundled file is loaded.
+    resolved_gtf = _resolve_gtf(gp)
+    if resolved_gtf is None:
+        st.warning(
+            "No GTF found for this genome — gene panel will be empty. "
+            "Run `bash scripts/setup_references.sh` to download the bundled "
+            "refSeq GTF."
+        )
+    else:
+        st.caption(f"GTF: `{resolved_gtf}`")
+
+    if st.button(
+        "RENDER TRACK PLOT", type="primary", use_container_width=True,
+        key="btn_tracks",
+    ):
+        if not chrom or end <= start:
+            st.error("specify a valid chrom / start / end")
+        elif not paths_loaded:
+            st.error("control and target MML + ME bedgraphs all required")
+        else:
+            out = out_dir / f"tracks_{chrom}_{int(start)}_{int(end)}.png"
+            res = _render_tracks(
+                gp, out, smooth_win=int(smooth_win), pad_bp=int(pad_bp),
+            )
+            if res and Path(res).exists():
+                st.image(str(res))

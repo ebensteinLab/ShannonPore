@@ -78,9 +78,10 @@ class TrackPlot:
 class GraphPrepState:
     """Tab 3 — Graph Preparation."""
 
-    control: TrackPlot = field(default_factory=lambda: TrackPlot(name="Control", color="#1f77b4"))
-    target: TrackPlot = field(default_factory=lambda: TrackPlot(name="Target", color="#ff7f0e"))
-    gtf_path: Path | None = None
+    control: TrackPlot = field(default_factory=lambda: TrackPlot(name="Control", color="#2980b9"))
+    target: TrackPlot = field(default_factory=lambda: TrackPlot(name="Target", color="#e67e22"))
+    genome: str = "hg38"
+    gtf_path: Path | None = None  # custom override; None ⇒ use bundled gtf for `genome`
     region_chrom: str = ""
     region_start: int = 0
     region_end: int = 0

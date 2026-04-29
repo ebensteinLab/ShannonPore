@@ -6,9 +6,11 @@ venv/
 .idea/
 .tmp_plots/
 .pytest_cache/
+.ruff_cache/
 .coverage
 .coverage.*
 htmlcov/
+*.egg-info/
 results/
 # Adversarial review run artifacts — but keep README + prompt templates.
 clawteam/*.md

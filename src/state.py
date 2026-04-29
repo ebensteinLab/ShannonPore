@@ -76,7 +76,7 @@ class TrackPlot:
 
 @dataclass
 class GraphPrepState:
-    """Tab 3 — Graph Preparation."""
+    """Tab 2 — Graph Preparation."""
 
     control: TrackPlot = field(default_factory=lambda: TrackPlot(name="Control", color="#2980b9"))
     target: TrackPlot = field(default_factory=lambda: TrackPlot(name="Target", color="#e67e22"))

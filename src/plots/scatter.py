@@ -31,6 +31,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.collections import LineCollection
 
 from src.io.bedgraph import read_bedgraph
 
@@ -146,7 +147,7 @@ def me_mml_scatter(
             cbar_lbl = "count"
             vmin = 1.0
             finite = Hd[np.isfinite(Hd)]
-            vmax = float(np.percentile(finite, 50)) if finite.size else 1.0
+            vmax = float(np.percentile(finite, vmax_pct)) if finite.size else 1.0
 
         im = ax.imshow(
             Hd, origin="lower", extent=[0, axis_cap, 0, axis_cap],
@@ -240,7 +241,7 @@ def triple_landscape(
             all_v = np.concatenate([
                 H_a_d[np.isfinite(H_a_d)], H_b_d[np.isfinite(H_b_d)],
             ])
-            s_vmax = float(np.percentile(all_v, 50)) if all_v.size else 1.0
+            s_vmax = float(np.percentile(all_v, vmax_pct)) if all_v.size else 1.0
         H_diff_d = H_diff_m
         cbar_diff = "Δ count"
         d_vmax = s_vmax
@@ -386,14 +387,21 @@ def paired_landscape(
         if n_bins > max_lines
         else sub
     )
+    n_drawn = len(plot_sub)
 
-    # Paired faint lines
-    for _, row in plot_sub.iterrows():
-        ax.plot(
-            [row["mml_a"], row["mml_b"]],
-            [row["me_a"], row["me_b"]],
-            lw=0.5, alpha=0.03, color="black", zorder=1,
+    # Paired faint lines (drawn as one LineCollection — orders of magnitude
+    # faster than per-bin ax.plot calls when n_drawn is in the tens of thousands).
+    if n_drawn > 0:
+        segs = np.stack(
+            [
+                np.column_stack([plot_sub["mml_a"].to_numpy(), plot_sub["me_a"].to_numpy()]),
+                np.column_stack([plot_sub["mml_b"].to_numpy(), plot_sub["me_b"].to_numpy()]),
+            ],
+            axis=1,
         )
+        ax.add_collection(LineCollection(
+            segs, linewidths=0.5, alpha=0.03, colors="black", zorder=1,
+        ))
 
     # Per-sample scatter
     ax.scatter(
@@ -445,6 +453,8 @@ def paired_landscape(
     )
     if n_zero:
         caption += f"        Δ ME = 0:  n = {n_zero:,}"
+    if n_drawn < n_bins:
+        caption += f"\n(counts over all {n_bins:,} filtered bins; {n_drawn:,} lines shown)"
     fig.text(
         0.5, 0.04, caption,
         ha="center", va="bottom",

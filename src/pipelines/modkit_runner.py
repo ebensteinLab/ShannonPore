@@ -121,5 +121,12 @@ def run_modkit_extract_minimal(
                 f"modkit finished but TSV output missing or empty: {out_tsv_path}"
             )
     finally:
+        # Terminate cleanly and reap the child so we never leak a zombie
+        # (Streamlit sessions are long-lived and accumulate them otherwise).
         if proc.poll() is None:
             proc.terminate()
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.wait()

@@ -175,8 +175,11 @@ class StreamlitProgress(Progress):
             self._bar.progress(1.0, text=f"{self._label} · done")
             self._status.update(state="complete", expanded=False)
             self._status.__exit__(None, None, None)
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as exc:  # noqa: BLE001
+            # Streamlit can raise during teardown if widgets are unmounted
+            # or the session is gone. Don't crash on shutdown — but log
+            # so we don't silently swallow real bugs in dev.
+            logger.debug("StreamlitProgress.close() suppressed: %r", exc)
 
 
 # ─── Backwards-compat helpers used by older modules ─────────────────────

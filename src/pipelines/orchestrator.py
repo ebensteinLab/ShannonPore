@@ -19,6 +19,7 @@ The orchestrator:
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -126,6 +127,16 @@ def _ensure_tsv(
     return tsv, bam
 
 
+_LABEL_SAFE = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def _safe_label(label: str) -> str:
+    """Strip path-separator and shell-special characters from a sample
+    label before using it as a path component. Caps at 64 chars."""
+    cleaned = _LABEL_SAFE.sub("_", label).strip("_")
+    return (cleaned or "sample")[:64]
+
+
 def run_one_sample(
     spec,
     *,
@@ -137,12 +148,16 @@ def run_one_sample(
     methyl_threshold: float,
     threads: int,
     chroms: str = "",
+    force_ingest: bool = False,
     progress_cb: Callable[[str], None] | None = None,
     pct_cb: Callable[[float, str], None] | None = None,
     status_cb: Callable[[str], None] | None = None,
 ) -> SampleResult:
     """Run the full BAM(/folder)/TSV → entropy bedgraphs pipeline for
     one ``SampleSpec``."""
+
+    # Defensive: never let a label like "../bad" escape out_dir.
+    spec.label = _safe_label(spec.label)
 
     out_dir = Path(out_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -175,6 +190,7 @@ def run_one_sample(
             methyl_thresh=float(methyl_threshold),
             min_coverage=int(min_coverage),
             chroms=chroms,
+            force_ingest=bool(force_ingest),
             progress_cb=progress_cb,
             pct_cb=pct_cb,
         )
@@ -189,6 +205,7 @@ def run_one_sample(
             methyl_thresh=float(methyl_threshold),
             min_coverage=int(min_coverage),
             chroms=chroms,
+            force_ingest=bool(force_ingest),
             entropy_mode=entropy_mode,
             progress_cb=progress_cb,
             pct_cb=pct_cb,
@@ -216,10 +233,11 @@ def run_pipeline(
     fasta: Path,
     entropy_mode: str = "true_mc",
     cpgs_per_bin: int = 4,
-    min_coverage: int = 4,
+    min_coverage: int = 16,
     methyl_threshold: float = 0.5,
     threads: int = 8,
     chroms: str = "",
+    force_ingest: bool = False,
     progress_cb: Callable[[str], None] | None = None,
     pct_cb: Callable[[float, str], None] | None = None,
     status_cb: Callable[[str], None] | None = None,
@@ -238,6 +256,7 @@ def run_pipeline(
             min_coverage=min_coverage,
             methyl_threshold=methyl_threshold,
             threads=threads, chroms=chroms,
+            force_ingest=force_ingest,
             progress_cb=progress_cb, pct_cb=pct_cb,
             status_cb=status_cb,
         )
@@ -263,6 +282,7 @@ def run_pipeline(
         min_coverage=min_coverage,
         methyl_threshold=methyl_threshold,
         threads=threads, chroms=chroms,
+        force_ingest=force_ingest,
         progress_cb=progress_cb, pct_cb=half_pct(0.0),
         status_cb=status_cb,
     )
@@ -276,6 +296,7 @@ def run_pipeline(
         min_coverage=min_coverage,
         methyl_threshold=methyl_threshold,
         threads=threads, chroms=chroms,
+        force_ingest=force_ingest,
         progress_cb=progress_cb, pct_cb=half_pct(0.5),
         status_cb=status_cb,
     )

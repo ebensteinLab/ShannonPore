@@ -2,26 +2,80 @@
 
 ## Unreleased
 
+### Added — graph prep & references
+- **Region track plot** rewritten to a 4-panel layout: gene structure
+  (exons, 1 kb promoter, strand arrows) → smoothed ME → smoothed MML →
+  optional smoothed coverage. Multiple genes in a window stack onto
+  separate rows automatically.
+- **Bundled GTFs auto-load.** hg38 and mm10 RefSeq GTFs are downloaded
+  on first use (~30–40 MB each) via `ensure_genome_gtf()`; the gene
+  panel and gene-name search "just work" without `setup_references.sh`.
+- **Gene-name search** in the Graph Prep track section: type a symbol
+  (e.g. `VHL`), click FIND, and chrom/start/end auto-fill. Near-misses
+  surface as "did you mean…" hints.
+- **Coverage panel** in the track plot when control/target coverage
+  bedgraphs are supplied. Autoscales (no 0–1 clamp).
+- **Saved-plot paths** — every render shows the on-disk PNG path with
+  file size; the tab header lists the base output directory.
+- **ME / MML scatter, arch landscape, paired landscape** plot families
+  (replacing the old hexbin / scatter / distribution UI). Paired
+  landscape draws bin counts (Δ ME ↑ / Δ ME ↓) in a caption block
+  below the axes — no in-plot arrows.
+- CLI `plot tracks` learns `--control-coverage` / `--target-coverage`,
+  `--genome`, `--smooth`/`--window`, `--pad`. `plot scatter|arch|landscape`
+  accept matched control/target bedgraphs and per-plot knobs.
+
 ### Fixed
-- **bioconda package name** — `environment.yml` pinned `modkit=0.6.0`
-  but bioconda's recipe is `ont-modkit` (the on-disk binary is still
-  `modkit`). Mamba aborted with `modkit =0.6.0 * does not exist
-  (perhaps a typo or a missing channel)` and the entire install
-  cascaded: env was never created, every subsequent `mamba run -n
-  shannonpore_v4 …` failed with "Environment must first be created…".
-  Renamed to `ont-modkit=0.6.0`.
-- **install.sh hard-fails on env-create error** — previously errors
-  silently passed through and downstream steps emitted confusing
-  "Environment must first be created" messages. Now we abort with
-  a clear message at the source.
-- `install.sh` no longer auto-downloads ~6 GiB of FASTAs by default —
-  this hung most fresh installs. Reference downloads are now opt-in
-  via `SHANNONPORE_DOWNLOAD_REFERENCES=1|hg38|mm10`, or by running
-  `scripts/setup_references.sh` manually. See `docs/INSTALL.md`.
+- **GUI state refresh** — the Graph Prep tab was using a one-cycle-stale
+  AppState after `update_section`, so genome / GTF changes only took
+  effect on the *next* widget interaction. Now refetches via `get_state()`.
+- **paired_landscape performance** — replaced the per-row `ax.plot` loop
+  with a single `LineCollection`, dropping render time on 20 k bins
+  from seconds to ~100 ms.
+- **vmax_pct ignored in linear colour scale** for me_mml_scatter and
+  triple_landscape — both modes now respect the parameter.
+- **track plot edge-clipped bins** — `_read_region` now uses half-open
+  overlap so a bedgraph bin that straddles the window edge isn't
+  silently dropped.
+- **Path-traversal hardening** — sanitize `chrom` (track-plot filename)
+  and `SampleSpec.label` (output-path component) before use.
+- **modkit zombies** — terminate path now `wait()`s after `terminate()`,
+  with `kill()` fallback.
+- **DuckDB SQL injection-resistant TSV path** — quote single-quotes in
+  TSV paths in `read_csv_auto('…')` so paths like `/data/O'Brien/x.tsv`
+  parse correctly.
+- **GTF download stalls** — global socket timeout for the read loop so a
+  hung mirror can't block forever; failed downloads now also clean up
+  non-zero partials.
+- **Orchestrator** — `force_ingest=True` from `--force` is now actually
+  forwarded to the entropy pipelines; `run_pipeline`'s `min_coverage`
+  default aligned with the GUI/CLI default of 16.
+- **`open(p, "w").close()` FD leaks** — replaced with `Path.touch()` in
+  the empty-output paths of both whole-genome and ternary pipelines.
+- **`bioconda package name`** — `environment.yml` pinned `modkit=0.6.0`
+  but bioconda's recipe is `ont-modkit`. Renamed to `ont-modkit=0.6.0`.
+- **`install.sh` micromamba bootstrap** — added `--fail --retry 3` to
+  the curl call so a non-2xx response aborts instead of feeding HTML
+  into tar.
+- **`install.sh` hard-fails on env-create error** instead of silently
+  passing through to a confusing "Environment must first be created"
+  downstream.
+- Reference FASTAs are downloaded **by default** by `install.sh`. Skip
+  with `SHANNONPORE_SKIP_REFERENCES=1`; pin to one genome with
+  `SHANNONPORE_DOWNLOAD_REFERENCES=hg38|mm10`. (GTFs are separately
+  lazy-downloaded on first GUI use.)
 - Added `pysam==0.22.1` to `environment.yml`, `requirements.txt`,
-  `pyproject.toml`, and the doctor's pinned-package check. `selftest`
-  imports pysam to build its synthetic BAM, so without this it would
-  fail immediately after a clean install.
+  `pyproject.toml`, and the doctor's pinned-package check.
+
+### Tests
+- New unit tests for `GeneStructure`, `load_gene_structures` (caching
+  + promoter strand logic), `find_gene_by_name`, `search_gene_names`,
+  `ensure_genome_gtf` (mocked download success / failure cleanup),
+  `me_mml_scatter` / `triple_landscape` / `paired_landscape` (including
+  no-bins-pass-filter and subsample-aware caption), and
+  `plot_region_tracks` 3-panel + 4-panel branches.
+- New integration tests for `plot tracks` CLI — both with and without
+  the coverage panel.
 
 ## v0.1.0 — 2026-04-29
 

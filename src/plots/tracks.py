@@ -137,7 +137,13 @@ def _read_region(
     df = read_bedgraph(str(path))
     if df.empty:
         return df
-    return df[(df["chrom"] == chrom) & (df["start"] >= lo) & (df["end"] <= hi)].copy()
+    # Half-open overlap so a bin straddling the window edge is kept rather
+    # than silently dropped (BED bins can be wider than the padding).
+    return df[
+        (df["chrom"] == chrom)
+        & (df["start"] < hi)
+        & (df["end"] > lo)
+    ].copy()
 
 
 def _smooth(vals: np.ndarray, win: int) -> np.ndarray:
@@ -303,7 +309,13 @@ def plot_region_tracks(
         ax.set_xlim(plot_lo, plot_hi)
     bottom_signal_ax.set_xlabel(f"Genomic position ({title_chr})", fontsize=10)
 
-    fig.tight_layout()
+    # `tight_layout` warns about the gene panel's axis("off"); the
+    # warning is cosmetic and `bbox_inches="tight"` on savefig handles
+    # the actual cropping. Suppress to keep test logs clean.
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", UserWarning)
+        fig.tight_layout()
     out = Path(out_path)
     fig.savefig(out, dpi=200, bbox_inches="tight")
     plt.close(fig)

@@ -156,11 +156,11 @@ shannonpore run --pair \
 shannonpore extract --bam       sample.bam   sample.tsv  --genome hg38
 shannonpore extract --bam-folder /lab/runs   merged.tsv  --genome hg38
 
-# Plot — ME / MML scatter, arch landscape, or paired landscape
-shannonpore plot scatter scatter.png \
-    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \
-    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \
-    --label-a Control --label-b Treated
+# Plot — four kinds. All take the same control + target bedgraphs.
+shannonpore plot scatter   scatter.png   --control-mml ctrl.mml.bedgraph --control-me ctrl.me.bedgraph --target-mml tgt.mml.bedgraph --target-me tgt.me.bedgraph --label-a Control --label-b Treated
+shannonpore plot arch      arch.png      --control-mml ...               --control-me ...              --target-mml ...              --target-me ...
+shannonpore plot landscape paired.png    --control-mml ...               --control-me ...              --target-mml ...              --target-me ...               --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1 --filter-b-dim '|dME|' --filter-b-op '>' --filter-b-value 0.4
+shannonpore plot tracks    tracks.png    --control-mml ...               --control-me ...              --target-mml ...              --target-me ...               --control-coverage ctrl.coverage.bedgraph --target-coverage tgt.coverage.bedgraph --genome hg38 --chrom chr3 --start 10141778 --end 10153676
 
 # Verify install / debug
 shannonpore doctor
@@ -177,9 +177,20 @@ shown via tqdm bars; rerun with `-v` for streaming worker output.
 streamlit run app.py
 ```
 
-Two tabs — `01 · file preparation` and `02 · graph preparation`. Both
-ship inline `📖 How to use this tab` panels (auto-expanded for first-time
-users), contextual `?` tooltips on every parameter, and a glossary
+Two tabs:
+
+* **`01 · file preparation`** — pick BAM(s) / TSV / folder, choose
+  entropy mode (true_mc / bisulfite / ternary) and bin parameters,
+  run the pipeline. Outputs land at `<results>/file_prep/`.
+* **`02 · graph preparation`** — five sections in order:
+  `01 · samples → 02 · ME / MML scatter → 03 · arch landscape →
+  04 · paired landscape → 05 · region (track plot)`. Bedgraph paths
+  are auto-populated from the last File Prep run. The track section
+  loads the bundled hg38 / mm10 RefSeq GTF on first use and lets you
+  search by gene name to auto-fill `chrom / start / end`.
+
+Both tabs ship inline `📖 How to use this tab` panels (auto-expanded
+for first-time users), contextual `?` tooltips, and a glossary
 (CpG · k · ME · MML · 5mC · 5hmC). Long-running steps get a Streamlit
 progress bar with live status.
 

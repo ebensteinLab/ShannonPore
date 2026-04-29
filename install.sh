@@ -37,7 +37,11 @@ choose_conda_cli() {
             *) err "Unsupported arch: $arch" ;;
         esac
         os="$(uname -s | tr '[:upper:]' '[:lower:]')"
-        curl -L "https://micro.mamba.pm/api/micromamba/${os}-${arch}/latest" \
+        # --fail so a non-2xx response (e.g. CDN error page) aborts instead
+        # of being piped into tar. Default pipefail behaviour catches a
+        # broken curl now.
+        curl -L --fail --retry 3 \
+            "https://micro.mamba.pm/api/micromamba/${os}-${arch}/latest" \
             | tar -xj -C "$HOME/.local" bin/micromamba
         export PATH="$HOME/.local/bin:$PATH"
         echo micromamba

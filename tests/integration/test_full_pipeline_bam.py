@@ -254,6 +254,52 @@ def test_cli_plot_landscape_produces_png(
     assert out_png.exists() and out_png.stat().st_size > 0
 
 
+def test_cli_plot_tracks_produces_png(
+    paired_bedgraphs: tuple[Path, Path, Path, Path], tmp_path: Path,
+) -> None:
+    """The 4th plot kind (tracks) was missing CLI coverage. Use an
+    empty real GTF so the gene panel renders 'No genes in this window'
+    without the runner trying to download from UCSC."""
+    ctrl_mml, ctrl_me, tgt_mml, tgt_me = paired_bedgraphs
+    out_png = tmp_path / "tracks.png"
+    empty_gtf = tmp_path / "empty.gtf"
+    empty_gtf.write_text("# no genes\n")
+    _run_cli(
+        "plot", "tracks", str(out_png),
+        "--control-mml", str(ctrl_mml),
+        "--control-me", str(ctrl_me),
+        "--target-mml", str(tgt_mml),
+        "--target-me", str(tgt_me),
+        "--chrom", "chr_test", "--start", "0", "--end", "80",
+        "--gtf", str(empty_gtf),
+    )
+    assert out_png.exists() and out_png.stat().st_size > 0
+    assert out_png.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_cli_plot_tracks_with_coverage_panel(
+    paired_bedgraphs: tuple[Path, Path, Path, Path], tmp_path: Path,
+) -> None:
+    """Coverage panel — re-uses the same MML files as fake coverage so
+    we exercise the 4-panel branch without producing new bedgraphs."""
+    ctrl_mml, ctrl_me, tgt_mml, tgt_me = paired_bedgraphs
+    out_png = tmp_path / "tracks_with_cov.png"
+    empty_gtf = tmp_path / "empty.gtf"
+    empty_gtf.write_text("# no genes\n")
+    _run_cli(
+        "plot", "tracks", str(out_png),
+        "--control-mml", str(ctrl_mml),
+        "--control-me", str(ctrl_me),
+        "--target-mml", str(tgt_mml),
+        "--target-me", str(tgt_me),
+        "--control-coverage", str(ctrl_mml),
+        "--target-coverage", str(tgt_mml),
+        "--chrom", "chr_test", "--start", "0", "--end", "80",
+        "--gtf", str(empty_gtf),
+    )
+    assert out_png.exists() and out_png.stat().st_size > 0
+
+
 # ─── 6. one-shot run ──────────────────────────────────────────────────────
 
 def test_cli_run_oneshot_bam_to_entropy(

@@ -13,6 +13,7 @@ Four plot families on top of the user's chosen samples:
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 
 from src.config import GENOMES, RESULTS_DIR, assets_for, ensure_genome_gtf
@@ -442,7 +443,10 @@ def render() -> None:
         genome=genome,
         gtf_path=Path(gtf_override) if gtf_override else None,
     )
-    gp = state.graph_prep  # refresh after update_section
+    # `update_section` rewrites st.session_state[_STATE_KEY]; the local
+    # `state` AppState captured at the top of render() is now stale. Refetch
+    # so `gp.genome` / `gp.gtf_path` reflect the just-saved values.
+    gp = get_state().graph_prep
 
     # Resolve GTF (downloads on first use). Surface state up-front so the
     # user sees what's happening.
@@ -541,7 +545,11 @@ def render() -> None:
         elif not paths_loaded:
             st.error("control and target MML + ME bedgraphs all required")
         else:
-            out = out_dir / f"tracks_{chrom}_{int(start)}_{int(end)}.png"
+            # Strip path-separators / whitespace from `chrom` before
+            # baking it into the output filename — defends against
+            # a typo like "../../foo" silently writing outside out_dir.
+            chrom_safe = re.sub(r"[^A-Za-z0-9._-]", "_", chrom)[:64] or "chrom"
+            out = out_dir / f"tracks_{chrom_safe}_{int(start)}_{int(end)}.png"
             res = _render_tracks(
                 gp, out, smooth_win=int(smooth_win), pad_bp=int(pad_bp),
             )

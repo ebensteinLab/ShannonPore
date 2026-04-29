@@ -19,6 +19,7 @@ import multiprocessing as mp
 import os
 import re
 from collections.abc import Callable
+from pathlib import Path
 
 import duckdb
 import numpy as np
@@ -135,6 +136,10 @@ def stage_a_build_duckdb_table(
     else:
         raise ValueError(f"Unknown entropy_mode: {entropy_mode!r}")
 
+    # SQL-quote the TSV path so a path containing a single quote (e.g.
+    # /data/O'Brien/sample.tsv) doesn't break the SQL parse.
+    tsv_path_sql = str(tsv_path).replace("'", "''")
+
     con.execute(
         f"""
         CREATE TABLE {table_name} AS
@@ -149,7 +154,7 @@ def stage_a_build_duckdb_table(
                 mod_qual::DOUBLE AS mod_qual,
                 mod_code::VARCHAR AS mod_code
             FROM read_csv_auto(
-                '{tsv_path}',
+                '{tsv_path_sql}',
                 delim='\t',
                 header=true,
                 ignore_errors=true,
@@ -201,7 +206,7 @@ def compute_chrom_metrics_from_db(
     k = int(cpgs_per_bin)
     if cpg_positions.size < k:
         for p in (out_cov, out_mml, out_me):
-            open(p, "w").close()
+            Path(p).touch()
         return f"[INFO] {chrom}: not enough CpGs, wrote empty outputs"
 
     n_full_bins = int(cpg_positions.size // k)
@@ -219,8 +224,8 @@ def compute_chrom_metrics_from_db(
         with open(out_cov, "w") as f_cov:
             for i in range(n_full_bins):
                 f_cov.write(f"{chrom}\t{int(starts[i])}\t{int(ends[i])}\t0\n")
-        open(out_mml, "w").close()
-        open(out_me, "w").close()
+        Path(out_mml).touch()
+        Path(out_me).touch()
         return f"[INFO] {chrom}: {reason}"
 
     if not rows:

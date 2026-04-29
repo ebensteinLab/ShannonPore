@@ -12,37 +12,40 @@
         ▼                       ▼                           ▼
 ┌──────────────────┐   ┌──────────────────┐    ┌─────────────────────┐
 │ src/tabs/        │   │ src/state.py     │    │ src/config.py       │
-│ ├ tab_file_prep  │   │ AppState (DC)    │    │ env-resolved paths │
-│ └ tab_graph_prep │   │ FilePrepState    │    │ SHANNONPORE_REF_DIR │
-└──────────────────┘   │ GraphPrepState   │    │ SHANNONPORE_RES_DIR │
-        │              └──────────────────┘    │ HG38 / MM10 assets  │
-        │                                      └─────────────────────┘
+│ ├ tab_file_prep  │   │ AppState (DC)    │    │ env-resolved paths      │
+│ └ tab_graph_prep │   │ FilePrepState    │    │ SHANNONPORE_REF_DIR     │
+└──────────────────┘   │ GraphPrepState   │    │ SHANNONPORE_RESULTS_DIR │
+        │              └──────────────────┘    │ HG38 / MM10 assets      │
+        │                                      └─────────────────────────┘
         │
-        ├─► src/pipelines/  (modkit_runner · roi_entropy · whole_genome_duckdb · ternary)
+        ├─► src/pipelines/  (orchestrator · modkit_runner · bam_utils ·
+        │                    whole_genome_duckdb · ternary · roi_entropy)
         ├─► src/plots/      (tracks · scatter [ME/MML + arch + paired] · theme)
         ├─► src/io/         (bedgraph · gtf_utils · roi_utils · utils_io)
         └─► src/ui/         (error_handler · progress · widgets · style)
 ```
 
 `src/cli.py` exposes the same pipelines as a Bash-friendly argparse CLI
-with subcommands `extract`, `entropy`, `plot`, `run`, `doctor`, `selftest`.
-The CLI shares 100% of its compute path with the GUI — both call into
-`src/pipelines/*`.
+with subcommands `extract`, `entropy`, `plot`, `run`, `doctor`, `selftest`,
+plus `guide` and `examples` for inline documentation. The CLI shares 100%
+of its compute path with the GUI — both call into `src/pipelines/*`.
 
 ## File budget
 
 | Layer | Lines | Notes |
 |---|---:|---|
 | `app.py` | <200 | page config, sidebar, tab dispatch, style injection |
-| `src/cli.py` | ~600 | argparse + 6 subcommands |
-| `src/tabs/tab_file_prep.py` | ~290 | input + entropy-mode + bins + output |
-| `src/tabs/tab_graph_prep.py` | ~390 | tracks · ME/MML scatter · arch landscape · paired landscape |
-| `src/state.py` | ~110 | AppState dataclass + accessors |
-| `src/pipelines/*` | 4 modules | one per compute strategy |
-| `src/plots/*` | 4 modules | one per plot family |
-| `src/ui/style.py` | ~180 | CSS injection + header band |
+| `src/cli.py` | ~950 | argparse + 8 subcommands; the largest module |
+| `src/tabs/tab_file_prep.py` | ~450 | input + entropy-mode + bins + output |
+| `src/tabs/tab_graph_prep.py` | ~600 | samples · ME/MML scatter · arch · paired · region track |
+| `src/state.py` | ~150 | AppState dataclass + accessors |
+| `src/pipelines/*` | 6 modules | orchestrator + extract/merge + 3 entropy strategies |
+| `src/plots/*` | 3 modules | scatter (3 plot families) · tracks · theme |
+| `src/ui/style.py` | ~260 | CSS injection + header band |
 
-Every module ≤ 600 lines. Plot logic is decoupled from Streamlit.
+Plot logic is decoupled from Streamlit; every plot module is importable
+without a Streamlit context. The current outlier on size is `cli.py`,
+which is mostly argparse boilerplate — splitting it is a tracked nice-to-have.
 
 ## Session state
 

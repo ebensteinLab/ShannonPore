@@ -100,31 +100,47 @@ def _download_to(url: str, dest: Path, *, progress_cb: Callable[[float, str], No
     """Stream-download ``url`` to ``dest`` atomically (writes to ``.partial``
     then renames). Reports fractional progress via ``progress_cb`` if given.
 
+    Hardened against:
+      * stalled mid-transfer reads — sets a socket-level default timeout so
+        ``resp.read()`` cannot hang indefinitely;
+      * leftover ``.partial`` files from a prior crashed run.
+
     Network failures bubble up as ``urllib.error.URLError`` /
-    ``ConnectionError`` so callers can decide whether to fall back.
+    ``ConnectionError`` / ``TimeoutError`` so callers can decide whether to
+    fall back.
     """
+    import socket
+
     dest.parent.mkdir(parents=True, exist_ok=True)
     partial = dest.with_suffix(dest.suffix + ".partial")
     if partial.exists():
         partial.unlink()
 
     logger.info("Downloading %s → %s", url, dest)
-    with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310 (trusted UCSC URL)
-        total_bytes = int(resp.headers.get("Content-Length", "0") or 0)
-        read = 0
-        chunk = 1 << 16
-        with open(partial, "wb") as f:
-            while True:
-                buf = resp.read(chunk)
-                if not buf:
-                    break
-                f.write(buf)
-                read += len(buf)
-                if progress_cb and total_bytes > 0:
-                    progress_cb(read / total_bytes, f"{read / 1e6:.1f} / {total_bytes / 1e6:.1f} MB")
-                elif progress_cb:
-                    progress_cb(0.0, f"{read / 1e6:.1f} MB")
-    partial.rename(dest)
+    # urllib's `timeout=` covers connect + initial response, not stalled
+    # mid-stream reads. Set the global socket timeout for the duration
+    # of the read loop so a hung server can't block us forever.
+    prior_default_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(60)
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310 (trusted UCSC URL, see GenomeAssets.gtf_url)
+            total_bytes = int(resp.headers.get("Content-Length", "0") or 0)
+            read = 0
+            chunk = 1 << 16
+            with open(partial, "wb") as f:
+                while True:
+                    buf = resp.read(chunk)
+                    if not buf:
+                        break
+                    f.write(buf)
+                    read += len(buf)
+                    if progress_cb and total_bytes > 0:
+                        progress_cb(read / total_bytes, f"{read / 1e6:.1f} / {total_bytes / 1e6:.1f} MB")
+                    elif progress_cb:
+                        progress_cb(0.0, f"{read / 1e6:.1f} MB")
+        partial.rename(dest)
+    finally:
+        socket.setdefaulttimeout(prior_default_timeout)
 
 
 def ensure_genome_gtf(
@@ -148,11 +164,16 @@ def ensure_genome_gtf(
     try:
         _download_to(assets.gtf_url, assets.gtf_gz, progress_cb=progress_cb)
     except Exception as exc:  # noqa: BLE001 — surface as a single retryable error
-        # Clean up any half-written file so the next attempt re-tries.
+        # Clean up partials AND any non-empty incomplete final file so the
+        # next attempt starts fresh. Previously this only removed zero-size
+        # files, which left a half-written GTF on disk after a stall.
         partial = assets.gtf_gz.with_suffix(assets.gtf_gz.suffix + ".partial")
         for p in (partial, assets.gtf_gz):
-            if p.exists() and p.stat().st_size == 0:
-                p.unlink()
+            try:
+                if p.exists():
+                    p.unlink()
+            except OSError:
+                logger.warning("Could not remove %s during cleanup", p)
         raise RuntimeError(
             f"Failed to download {assets.gtf_url}: {exc}. "
             "Check internet access or run "

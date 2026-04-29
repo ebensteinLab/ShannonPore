@@ -61,11 +61,15 @@ CLI — one-shot pair plot (the four bedgraphs are produced by `run --pair`):
     shannonpore plot scatter   scatter.png   --control-mml ctrl.mml.bedgraph --control-me ctrl.me.bedgraph --target-mml tgt.mml.bedgraph  --target-me tgt.me.bedgraph  --label-a Control --label-b Target
     shannonpore plot arch      arch.png      --control-mml ...               --control-me ...              --target-mml ...               --target-me ...
     shannonpore plot landscape landscape.png --control-mml ...               --control-me ...              --target-mml ...               --target-me ...                --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1   --filter-b-dim '|dME|'  --filter-b-op '>' --filter-b-value 0.4
+    shannonpore plot tracks    tracks.png    --control-mml ...               --control-me ...              --target-mml ...               --target-me ...                --control-coverage ctrl.coverage.bedgraph --target-coverage tgt.coverage.bedgraph --genome hg38 --chrom chr3 --start 10141778 --end 10153676
 
 GUI:
 The Plotting tab is auto-populated with the bedgraphs from your last run.
-Pick a plot type — track, ME/MML scatter, arch landscape, or paired
-landscape — and click "render".
+Pick a plot type — ME / MML scatter, arch landscape, paired landscape,
+or region track plot (gene structure + ME + MML + coverage) — and
+click "render". Type a gene symbol in the track section to auto-fill
+chrom/start/end. The bundled hg38 / mm10 GTF downloads automatically
+on first use.
 
 ## Verification & troubleshooting
 
@@ -135,13 +139,22 @@ shannonpore plot arch arch.png \\
     --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
     --label-a Control --label-b Treated
 
-# Paired landscape with direction arrows (filter to entropy-shifted bins)
+# Paired landscape with bin-shift counts (filter to entropy-shifted bins)
 shannonpore plot landscape paired.png \\
     --control-mml control.mml.bedgraph --control-me control.me.bedgraph \\
     --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
     --label-a Control --label-b Treated \\
     --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1 \\
     --filter-b-dim '|dME|'  --filter-b-op '>' --filter-b-value 0.4
+
+# Region track plot (gene structure + smoothed ME + MML + coverage)
+shannonpore plot tracks tracks.png \\
+    --control-mml control.mml.bedgraph --control-me control.me.bedgraph \\
+    --target-mml  treated.mml.bedgraph --target-me  treated.me.bedgraph \\
+    --control-coverage control.coverage.bedgraph \\
+    --target-coverage  treated.coverage.bedgraph \\
+    --genome hg38 --chrom chr3 --start 10141778 --end 10153676 \\
+    --label-a Control --label-b Treated
 
 # Verify install
 shannonpore doctor

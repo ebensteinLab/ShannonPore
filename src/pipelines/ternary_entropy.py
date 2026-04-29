@@ -19,6 +19,7 @@ import multiprocessing as mp
 import os
 import re
 from collections.abc import Callable
+from pathlib import Path
 
 import duckdb
 import numpy as np
@@ -120,6 +121,9 @@ def stage_a_build_duckdb_ternary(
         con.execute(f"DROP TABLE {table_name};")
 
     thresh = float(methyl_thresh)
+    # SQL-quote the TSV path so a single-quote in the path doesn't blow
+    # up the SQL parser.
+    tsv_path_sql = str(tsv_path).replace("'", "''")
     con.execute(
         f"""
         CREATE TABLE {table_name} AS
@@ -134,7 +138,7 @@ def stage_a_build_duckdb_ternary(
                 mod_qual::DOUBLE  AS mod_qual,
                 mod_code::VARCHAR AS mod_code
             FROM read_csv_auto(
-                '{tsv_path}',
+                '{tsv_path_sql}',
                 delim='\t',
                 header=true,
                 ignore_errors=true,
@@ -191,7 +195,7 @@ def compute_chrom_ternary(
     cpg_positions = _find_cpg_positions(fasta_path, chrom, chunk_size=int(fasta_chunk))
     if cpg_positions.size < k:
         for p in out_paths.values():
-            open(p, "w").close()
+            Path(p).touch()
         return f"[INFO] {chrom}: not enough CpGs ({cpg_positions.size})"
 
     n_full = int(cpg_positions.size // k)
@@ -210,7 +214,7 @@ def compute_chrom_ternary(
             for i in range(n_full):
                 f.write(f"{chrom}\t{int(starts[i])}\t{int(ends[i])}\t0\n")
         for s in suffixes[1:]:
-            open(out_paths[s], "w").close()
+            Path(out_paths[s]).touch()
         return f"[INFO] {chrom}: {reason}"
 
     if not rows:

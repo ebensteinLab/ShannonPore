@@ -1,4 +1,4 @@
-# Pinned Python dependencies for nanoentropy v4.
+# Pinned Python dependencies for shannonpore (v4).
 # Versions match what was working in the system Python 3.10.12 environment
 # at the time of v4 cut. Bit-for-bit reproducible install in any year.
 #

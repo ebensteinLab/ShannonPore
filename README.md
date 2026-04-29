@@ -1,13 +1,16 @@
-<img width="1024" height="506" alt="Gemini_Generated_Image_kcm5chkcm5chkcm5" src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00" />
 <div align="center">
 
-# shannonpore
+<img src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00"
+     alt="shannonpore — methylation entropy from nanopore reads"
+     width="780">
 
-**Nanopore methylation entropy analysis — GUI + CLI**
-
-Per-CpG methylation entropy (ME), mean methylation level (MML), and coverage from
-modkit-extracted nanopore reads. Three modes for handling 5hmC: True-mC,
-Bisulfite-equivalent, and Ternary (3-state).
+<p>
+<sub>
+Per-CpG methylation entropy (ME), mean methylation level (MML), and coverage<br/>
+from modkit-extracted nanopore reads.<br/>
+Three 5hmC modes: <b>True-mC</b>, <b>Bisulfite-equivalent</b>, <b>Ternary</b>.
+</sub>
+</p>
 
 [![CI](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml)
 [![Streamlit smoke](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml)

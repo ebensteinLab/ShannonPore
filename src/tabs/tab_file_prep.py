@@ -189,8 +189,22 @@ def _summarize(result) -> dict | None:
 
 
 def _autoload_graph_prep(target_result, control_result, fp) -> None:
-    """Wire produced bedgraph paths into state.graph_prep so the
-    Plotting tab is ready to go without copy-paste."""
+    """Wire produced bedgraph paths into state.graph_prep AND into the
+    Streamlit-widget-keyed session_state so the Plotting tab is ready
+    to go without copy-paste.
+
+    Two writes are needed because Streamlit widgets with a ``key=``
+    own their session_state slot: on first render they snapshot the
+    ``value=`` argument, on subsequent renders they read from
+    ``st.session_state[key]`` and *ignore* the new ``value=`` argument
+    entirely. So updating the AppState dataclass alone won't move the
+    UI — we have to force-overwrite the widget keys too. This works
+    because Streamlit allows writing to a key before the widget
+    instantiates (we run during the File Prep tab's button handler,
+    which fires before the Graph Prep tab re-renders).
+    """
+    import streamlit as st
+
     target_track = TrackPlot(
         name=target_result.label,
         color="#ff7f0e",
@@ -199,6 +213,7 @@ def _autoload_graph_prep(target_result, control_result, fp) -> None:
         coverage_path=target_result.coverage_bedgraph,
     )
     update_section("graph_prep", target=target_track)
+    _push_track_to_widgets(st, "target", target_track)
 
     if control_result is not None:
         control_track = TrackPlot(
@@ -209,19 +224,34 @@ def _autoload_graph_prep(target_result, control_result, fp) -> None:
             coverage_path=control_result.coverage_bedgraph,
         )
         update_section("graph_prep", control=control_track)
+        _push_track_to_widgets(st, "control", control_track)
     else:
         # Single-sample mode — make `control` a copy of target so the
         # Plotting tab still shows something sensible (user can swap).
-        update_section(
-            "graph_prep",
-            control=TrackPlot(
-                name=target_result.label,
-                color="#1f77b4",
-                mml_path=target_result.mml_bedgraph,
-                me_path=target_result.me_bedgraph,
-                coverage_path=target_result.coverage_bedgraph,
-            ),
+        copied = TrackPlot(
+            name=target_result.label,
+            color="#1f77b4",
+            mml_path=target_result.mml_bedgraph,
+            me_path=target_result.me_bedgraph,
+            coverage_path=target_result.coverage_bedgraph,
         )
+        update_section("graph_prep", control=copied)
+        _push_track_to_widgets(st, "control", copied)
+
+
+def _push_track_to_widgets(st, side: str, track: TrackPlot) -> None:
+    """Force-overwrite the Streamlit-widget-keyed slots that
+    tab_graph_prep._track_inputs reads from.
+
+    Keys must match those used in tab_graph_prep.py:
+        f"{side}_name", f"{side}_color", f"{side}_mml",
+        f"{side}_me",   f"{side}_cov"
+    """
+    st.session_state[f"{side}_name"] = track.name
+    st.session_state[f"{side}_color"] = track.color
+    st.session_state[f"{side}_mml"] = str(track.mml_path or "")
+    st.session_state[f"{side}_me"] = str(track.me_path or "")
+    st.session_state[f"{side}_cov"] = str(track.coverage_path or "")
 
 
 def render() -> None:

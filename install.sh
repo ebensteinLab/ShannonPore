@@ -152,33 +152,74 @@ if [[ -f "$V4_DIR/bin/shannonpore.bash-completion" ]]; then
     log "Bash completion installed → $COMPLETION_DIR/shannonpore"
 fi
 
-# ── Symlink wrappers into ~/.local/bin so users can call them globally ───
+# ── Symlink wrappers into a bin dir on PATH ──────────────────────────────
 #
-# Why: the wrappers use `mamba run -n shannonpore …` so they don't need
-# `mamba activate` (and therefore don't need shell init). Symlinking
-# them into ~/.local/bin makes `shannonpore` and `shannonpore-gui`
-# globally callable commands in any new shell — no `cd` to the repo,
-# no activation, no shell init dance.
-USER_BIN="$HOME/.local/bin"
-mkdir -p "$USER_BIN"
+# The wrappers use `mamba run -n shannonpore …` so they don't need
+# `mamba activate`. Symlinking them onto PATH makes `shannonpore` and
+# `shannonpore-gui` globally callable.
+#
+# Path discovery: scan $PATH for a user-writable bin directory that is
+# ALREADY on PATH. This is robust against network-mounted home setups
+# where $HOME and the PATH-dir parent don't share a literal prefix.
+# Falls back to $HOME/.local/bin (and warns) if nothing on PATH is
+# user-writable.
+USER_BIN=""
+PATH_HAS_USER_BIN="no"
+
+IFS=':' read -ra _PATH_DIRS <<< "$PATH"
+
+# `pick_bin <pattern>` returns the first PATH entry that:
+#   - matches the glob in $1   (e.g. "*/.local/bin")
+#   - exists on disk
+#   - is user-writable
+#   - is not a system / tool-specific dir
+# Skips Rust .cargo/bin, conda condabin, nvm, miniconda envs, lab tool dirs,
+# /usr/*, /etc/*, /bin, /sbin, /opt/*, /snap/*.
+pick_bin() {
+    local glob="$1" d
+    for d in "${_PATH_DIRS[@]}"; do
+        [[ -z "$d" ]] && continue
+        [[ -d "$d" && -w "$d" ]] || continue
+        case "$d" in
+            /usr/*|/etc/*|/bin|/sbin|/opt/*|/snap/*) continue ;;
+            */.cargo/bin|*/condabin|*/.nvm/*|*/miniconda*/envs/*) continue ;;
+        esac
+        # shellcheck disable=SC2053
+        [[ "$d" == $glob ]] && { echo "$d"; return 0; }
+    done
+    return 1
+}
+
+# Try in order of preference: most generic/expected first.
+USER_BIN="$(pick_bin '*/.local/bin'      || true)"
+[[ -z "$USER_BIN" ]] && USER_BIN="$(pick_bin '*/local/bin'  || true)"
+[[ -z "$USER_BIN" ]] && USER_BIN="$(pick_bin '*/bin'        || true)"
+
+if [[ -n "$USER_BIN" ]]; then
+    PATH_HAS_USER_BIN="yes"
+else
+    # Nothing on PATH was suitable — fall back to ~/.local/bin and warn.
+    USER_BIN="$HOME/.local/bin"
+    mkdir -p "$USER_BIN"
+fi
+
+log "Symlinking wrappers into: $USER_BIN  (on PATH: $PATH_HAS_USER_BIN)"
 for w in shannonpore shannonpore-gui; do
     src="$V4_DIR/bin/$w"
     dst="$USER_BIN/$w"
-    if [[ -L "$dst" || -e "$dst" ]]; then
-        rm -f "$dst"
-    fi
+    [[ -L "$dst" || -e "$dst" ]] && rm -f "$dst"
     ln -s "$src" "$dst"
-    log "Linked $w → $dst"
+    log "  $w → $dst"
 done
 
-# Warn if ~/.local/bin isn't on PATH so the user knows to add it.
-PATH_HAS_USER_BIN="no"
-case ":$PATH:" in *":$USER_BIN:"*) PATH_HAS_USER_BIN="yes" ;; esac
 if [[ "$PATH_HAS_USER_BIN" != "yes" ]]; then
-    warn "$USER_BIN is not on your PATH."
-    warn "Add this line to your shell rc to make 'shannonpore' globally callable:"
-    warn "    export PATH=\"\$HOME/.local/bin:\$PATH\""
-    warn "Or just call them by full path: $V4_DIR/bin/shannonpore-gui"
+    warn ""
+    warn "$USER_BIN is NOT on your PATH yet."
+    warn "Add this line to your shell rc and open a new terminal:"
+    warn "    export PATH=\"$USER_BIN:\$PATH\""
+    warn "Or call the wrappers by absolute path:"
+    warn "    $V4_DIR/bin/shannonpore-gui"
+    warn ""
 fi
 
 # ── Initialise the user's shell so `mamba activate` works ────────────────

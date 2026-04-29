@@ -1,16 +1,19 @@
-<div align="center">
-
-<img src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00"
-     alt="shannonpore — methylation entropy from nanopore reads"
-     width="780">
-
-<p>
-<sub>
-Per-CpG methylation entropy (ME), mean methylation level (MML), and coverage<br/>
-from modkit-extracted nanopore reads.<br/>
-Three 5hmC modes: <b>True-mC</b>, <b>Bisulfite-equivalent</b>, <b>Ternary</b>.
-</sub>
+<p align="center">
+  <a href="https://github.com/uribertocchitau/shannonpore">
+    <img src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00"
+         alt="shannonpore — methylation entropy from nanopore reads"
+         width="100%">
+  </a>
 </p>
+
+<p align="center">
+  <sub>
+    Per-CpG methylation entropy (ME), mean methylation level (MML), and coverage from modkit-extracted nanopore reads.<br/>
+    Three 5hmC modes: <b>True-mC</b> · <b>Bisulfite-equivalent</b> · <b>Ternary</b>.
+  </sub>
+</p>
+
+<p align="center">
 
 [![CI](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml)
 [![Streamlit smoke](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml)
@@ -20,7 +23,9 @@ Three 5hmC modes: <b>True-mC</b>, <b>Bisulfite-equivalent</b>, <b>Ternary</b>.
 [![modkit 0.6](https://img.shields.io/badge/modkit-0.6.0-orange.svg)](https://github.com/nanoporetech/modkit)
 [![DOI](https://img.shields.io/badge/cite-CITATION.cff-blue.svg)](CITATION.cff)
 
-</div>
+</p>
+
+<br/>
 
 ---
 

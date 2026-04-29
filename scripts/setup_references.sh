@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# nanoentropy v4 — populate REFERENCE_DIR with FASTAs + GTFs.
+# shannonpore v4 — populate REFERENCE_DIR with FASTAs + GTFs.
 #
 # Downloads UCSC reference FASTAs (hg38 / mm10) plus matching
 # ncbiRefSeq GTFs, then runs `samtools faidx` on each FASTA to produce
-# the .fai index nanoentropy needs.
+# the .fai index shannonpore needs.
 #
-# By default downloads ALL genomes nanoentropy supports (currently hg38
+# By default downloads ALL genomes shannonpore supports (currently hg38
 # and mm10). Pass `--genome hg38` or `--genome mm10` to limit.
 #
 # Usage:
 #   bash scripts/setup_references.sh                # both hg38 + mm10
 #   bash scripts/setup_references.sh --genome hg38  # only hg38
-#   NANOENTROPY_REF_DIR=/big/disk/refs bash scripts/setup_references.sh
+#   SHANNONPORE_REF_DIR=/big/disk/refs bash scripts/setup_references.sh
 #
 # Sizes (post-decompression, approximate):
 #   hg38.fa  ~3.2 GiB  + hg38.ncbiRefSeq.gtf.gz ~40 MiB
@@ -24,7 +24,7 @@
 set -euo pipefail
 
 V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-REF_DIR="${NANOENTROPY_REF_DIR:-$V4_DIR/reference_files}"
+REF_DIR="${SHANNONPORE_REF_DIR:-$V4_DIR/reference_files}"
 
 GENOMES_TO_FETCH=("hg38" "mm10")
 case "${1:-}" in
@@ -46,7 +46,7 @@ err()  { printf '\033[1;31m[err]\033[0m %s\n'  "$*" >&2; exit 1; }
 
 command -v curl >/dev/null 2>&1     || err "curl not found"
 command -v gunzip >/dev/null 2>&1   || err "gunzip not found"
-command -v samtools >/dev/null 2>&1 || err "samtools not found (install nanoentropy env first)"
+command -v samtools >/dev/null 2>&1 || err "samtools not found (install shannonpore env first)"
 
 mkdir -p "$REF_DIR"
 log "REFERENCE_DIR = $REF_DIR"
@@ -95,4 +95,4 @@ for g in "${GENOMES_TO_FETCH[@]}"; do
     download_if_missing "$GTF_URL" "$GTF"
 done
 
-log "done. Verify with: nanoentropy doctor"
+log "done. Verify with: shannonpore doctor"

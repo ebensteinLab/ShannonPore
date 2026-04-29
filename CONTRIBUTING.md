@@ -1,6 +1,6 @@
-# Contributing to nanoentropy
+# Contributing to shannonpore
 
-Thanks for your interest in contributing to **nanoentropy**! This document
+Thanks for your interest in contributing to **shannonpore**! This document
 describes how to set up a development environment, the standards we follow,
 and how to submit changes.
 
@@ -9,8 +9,8 @@ and how to submit changes.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/uribertocchitau/nanoentropy.git
-   cd nanoentropy
+   git clone https://github.com/uribertocchitau/shannonpore.git
+   cd shannonpore
    ```
 
 2. **Install** the conda + Python + R environment:
@@ -22,8 +22,8 @@ and how to submit changes.
 3. **Verify the install:**
 
    ```bash
-   nanoentropy doctor      # checks runtime dependencies
-   nanoentropy selftest    # runs a small end-to-end smoke pipeline
+   shannonpore doctor      # checks runtime dependencies
+   shannonpore selftest    # runs a small end-to-end smoke pipeline
    ```
 
 If both commands report a clean status, you're ready to develop.
@@ -117,8 +117,8 @@ Examples:
 A PR is ready to merge when **all** of the following hold:
 
 - [ ] All tests pass: `pytest -v -p no:anyio`
-- [ ] `nanoentropy doctor` runs clean
-- [ ] `nanoentropy selftest` runs clean
+- [ ] `shannonpore doctor` runs clean
+- [ ] `shannonpore selftest` runs clean
 - [ ] `ruff check src tests` is clean
 - [ ] `black --check src tests` is clean
 - [ ] No merge conflicts with `main`
@@ -133,28 +133,16 @@ agree on approach.
 ## Issues and questions
 
 - **Bug reports** and **feature requests:** open a
-  [GitHub Issue](https://github.com/uribertocchitau/nanoentropy/issues).
-  Include `nanoentropy doctor` output, OS / Python / R versions, a minimal
+  [GitHub Issue](https://github.com/uribertocchitau/shannonpore/issues).
+  Include `shannonpore doctor` output, OS / Python / R versions, a minimal
   reproducer, and the expected vs. actual behavior.
 - **Questions, ideas, "how do I…":** use
-  [GitHub Discussions](https://github.com/uribertocchitau/nanoentropy/discussions)
+  [GitHub Discussions](https://github.com/uribertocchitau/shannonpore/discussions)
   rather than the issue tracker.
 
 ## Code review
 
-We use an internal **adversarial review pipeline** to catch regressions and
-hallucinated behavior in PRs that touch core pipelines or plotting code.
-You can run it locally over a branch:
-
-```bash
-bash clawteam/orchestrate_review.sh v4-rev 3 5
-```
-
-See [`clawteam/README.md`](clawteam/README.md) for what the five-agent
-pipeline does (code QA, hallucination QA, brutal review, defender, fixer)
-and how to interpret its output.
-
-For routine PRs, a single human reviewer plus passing CI is sufficient.
+A single human reviewer plus passing CI is sufficient for PRs.
 
 ## License
 

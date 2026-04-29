@@ -1,6 +1,6 @@
-"""Integration tests for the nanoentropy CLI.
+"""Integration tests for the shannonpore CLI.
 
-Invokes ``python -m src.cli`` (rather than the installed `nanoentropy`
+Invokes ``python -m src.cli`` (rather than the installed `shannonpore`
 script) so the tests pass without `pip install -e .` having been run.
 """
 
@@ -93,7 +93,7 @@ def test_guide_prints_walkthrough() -> None:
 @pytest.mark.integration
 def test_examples_prints_recipes() -> None:
     proc = _run("examples")
-    assert "nanoentropy run" in proc.stdout
+    assert "shannonpore run" in proc.stdout
     assert "--pair" in proc.stdout
     assert "--bam-folder" in proc.stdout
 

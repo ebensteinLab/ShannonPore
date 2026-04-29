@@ -21,12 +21,12 @@ def _env_path(var: str, default: Path) -> Path:
 PROJECT_ROOT: Path = Path(__file__).resolve().parent.parent
 
 REFERENCE_DIR: Path = _env_path(
-    "NANOENTROPY_REF_DIR",
+    "SHANNONPORE_REF_DIR",
     PROJECT_ROOT / "reference_files",
 )
 
 RESULTS_DIR: Path = _env_path(
-    "NANOENTROPY_RESULTS_DIR",
+    "SHANNONPORE_RESULTS_DIR",
     PROJECT_ROOT / "results",
 )
 
@@ -75,7 +75,7 @@ def ensure_dirs() -> None:
 
     REFERENCE_DIR will be created as an empty directory; population is
     handled by ``scripts/setup_references.sh`` (or the user's existing
-    reference path via ``NANOENTROPY_REF_DIR``). ``reference_status``
+    reference path via ``SHANNONPORE_REF_DIR``). ``reference_status``
     reports whether each expected genome's FASTA is actually present.
     """
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -85,7 +85,7 @@ def ensure_dirs() -> None:
 def reference_status() -> dict[str, dict[str, bool]]:
     """Return per-genome presence map for the bundled reference assets.
 
-    Used by ``nanoentropy doctor`` and the GUI sidebar to surface the
+    Used by ``shannonpore doctor`` and the GUI sidebar to surface the
     "you still need to download FASTAs" state actionably rather than as
     an opaque "missing dir" warning.
     """

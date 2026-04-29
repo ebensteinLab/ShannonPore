@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# nanoentropy v4 — idempotent installer
+# shannonpore v4 — idempotent installer
 # Produces a bit-for-bit reproducible environment from pinned lockfiles.
 #
 # Strategy:
 #   1. Ensure micromamba (no admin rights needed; falls back to mamba/conda).
 #   2. Create env from conda-lock.yml if present, else environment.yml.
 #   3. Install pip-only deps from requirements.txt as a belt-and-braces step.
-#   4. pip install -e .  →  the `nanoentropy` console script lands on PATH.
-#   5. Run `nanoentropy doctor` and `nanoentropy selftest` to confirm.
+#   4. pip install -e .  →  the `shannonpore` console script lands on PATH.
+#   5. Run `shannonpore doctor` and `shannonpore selftest` to confirm.
 
 set -euo pipefail
 
 V4_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_NAME="${NANOENTROPY_ENV_NAME:-nanoentropy}"
+ENV_NAME="${SHANNONPORE_ENV_NAME:-shannonpore}"
 LOCKFILE="$V4_DIR/conda-lock.yml"
 ENV_YML="$V4_DIR/environment.yml"
 REQ_TXT="$V4_DIR/requirements.txt"
@@ -90,12 +90,11 @@ fi
 # ── Executable bits on shipped scripts ────────────────────────────────────
 log "Ensuring executable bits on scripts..."
 chmod +x "$V4_DIR/install.sh" 2>/dev/null || true
-chmod +x "$V4_DIR/bin/nanoentropy" 2>/dev/null || true
-chmod +x "$V4_DIR/clawteam/orchestrate_review.sh" 2>/dev/null || true
+chmod +x "$V4_DIR/bin/shannonpore" 2>/dev/null || true
 chmod +x "$V4_DIR/scripts/setup_references.sh" 2>/dev/null || true
 
 # ── REFERENCE_DIR ─────────────────────────────────────────────────────────
-REF_DIR="${NANOENTROPY_REF_DIR:-$V4_DIR/reference_files}"
+REF_DIR="${SHANNONPORE_REF_DIR:-$V4_DIR/reference_files}"
 log "Ensuring REFERENCE_DIR exists: $REF_DIR"
 mkdir -p "$REF_DIR"
 
@@ -104,19 +103,19 @@ mkdir -p "$REF_DIR"
 # a really bad first-run experience — so the install is OPT-IN.
 #
 #   bash install.sh                                             # no FASTA download (default)
-#   NANOENTROPY_DOWNLOAD_REFERENCES=1 bash install.sh           # download both genomes
-#   NANOENTROPY_DOWNLOAD_REFERENCES=hg38 bash install.sh        # download just one
-#   NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh      # use existing refs
+#   SHANNONPORE_DOWNLOAD_REFERENCES=1 bash install.sh           # download both genomes
+#   SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh        # download just one
+#   SHANNONPORE_REF_DIR=/path/to/your/refs bash install.sh      # use existing refs
 HAS_HG38="$([[ -s "$REF_DIR/hg38.fa" && -s "$REF_DIR/hg38.fa.fai" ]] && echo yes || echo no)"
 HAS_MM10="$([[ -s "$REF_DIR/mm10.fa" && -s "$REF_DIR/mm10.fa.fai" ]] && echo yes || echo no)"
 
-DL_REQ="${NANOENTROPY_DOWNLOAD_REFERENCES:-0}"
+DL_REQ="${SHANNONPORE_DOWNLOAD_REFERENCES:-0}"
 if [[ "$HAS_HG38" == "yes" && "$HAS_MM10" == "yes" ]]; then
     log "Reference FASTAs already present (hg38 + mm10)."
 elif [[ "$DL_REQ" == "0" || -z "$DL_REQ" ]]; then
     log "Reference FASTAs not downloaded (default)."
     log "  → To use the GUI / CLI you need a populated REFERENCE_DIR."
-    log "  → Either set NANOENTROPY_REF_DIR to your existing refs, OR run:"
+    log "  → Either set SHANNONPORE_REF_DIR to your existing refs, OR run:"
     log "      bash $V4_DIR/scripts/setup_references.sh                # both"
     log "      bash $V4_DIR/scripts/setup_references.sh --genome hg38  # one"
 else
@@ -124,7 +123,7 @@ else
         1|both|all)         DL_ARGS=() ;;
         hg38)               DL_ARGS=(--genome hg38) ;;
         mm10)               DL_ARGS=(--genome mm10) ;;
-        *) warn "NANOENTROPY_DOWNLOAD_REFERENCES=$DL_REQ — expected 1|hg38|mm10; skipping download."
+        *) warn "SHANNONPORE_DOWNLOAD_REFERENCES=$DL_REQ — expected 1|hg38|mm10; skipping download."
            DL_ARGS=("--noop") ;;
     esac
     if [[ "${DL_ARGS[0]:-}" != "--noop" ]]; then
@@ -137,41 +136,41 @@ else
         fi
     fi
 fi
-export NANOENTROPY_REF_DIR="$REF_DIR"
+export SHANNONPORE_REF_DIR="$REF_DIR"
 
-# ── Editable install (puts `nanoentropy` console script on PATH) ──────────
-log "Installing nanoentropy package (editable)..."
+# ── Editable install (puts `shannonpore` console script on PATH) ──────────
+log "Installing shannonpore package (editable)..."
 RUN pip install --no-deps --no-user -e "$V4_DIR" \
     || warn "editable install failed; CLI still usable as 'python -m src.cli'"
 
 # ── Bash completion ───────────────────────────────────────────────────────
 COMPLETION_DIR="$HOME/.local/share/bash-completion/completions"
-if [[ -f "$V4_DIR/bin/nanoentropy.bash-completion" ]]; then
+if [[ -f "$V4_DIR/bin/shannonpore.bash-completion" ]]; then
     mkdir -p "$COMPLETION_DIR"
-    cp "$V4_DIR/bin/nanoentropy.bash-completion" "$COMPLETION_DIR/nanoentropy"
-    log "Bash completion installed → $COMPLETION_DIR/nanoentropy"
+    cp "$V4_DIR/bin/shannonpore.bash-completion" "$COMPLETION_DIR/shannonpore"
+    log "Bash completion installed → $COMPLETION_DIR/shannonpore"
 fi
 
 # ── Doctor ────────────────────────────────────────────────────────────────
-log "Running 'nanoentropy doctor'..."
+log "Running 'shannonpore doctor'..."
 if RUN python -m src.cli doctor; then
     log "Doctor passed."
 else
-    warn "Doctor reported issues. Review the table above; you may need to set NANOENTROPY_REF_DIR."
+    warn "Doctor reported issues. Review the table above; you may need to set SHANNONPORE_REF_DIR."
 fi
 
 # ── Selftest ──────────────────────────────────────────────────────────────
-if [[ "${NANOENTROPY_SKIP_SELFTEST:-0}" != "1" ]]; then
-    log "Running 'nanoentropy selftest' (synthetic BAM end-to-end)..."
+if [[ "${SHANNONPORE_SKIP_SELFTEST:-0}" != "1" ]]; then
+    log "Running 'shannonpore selftest' (synthetic BAM end-to-end)..."
     if RUN python -m src.cli selftest; then
         log "Selftest passed. Install is fully functional."
     else
         warn "Selftest reported issues. See the output above."
     fi
 else
-    log "Skipping selftest (NANOENTROPY_SKIP_SELFTEST=1)."
+    log "Skipping selftest (SHANNONPORE_SKIP_SELFTEST=1)."
 fi
 
 log "Done."
 log "  GUI:  ${CONDA_BIN} activate $ENV_NAME && streamlit run $V4_DIR/app.py"
-log "  CLI:  ${CONDA_BIN} activate $ENV_NAME && nanoentropy --help"
+log "  CLI:  ${CONDA_BIN} activate $ENV_NAME && shannonpore --help"

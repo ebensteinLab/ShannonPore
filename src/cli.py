@@ -1,4 +1,4 @@
-"""Command-line interface for nanoentropy v4.
+"""Command-line interface for shannonpore v4.
 
 Mirrors every feature of the Streamlit GUI as scriptable subcommands so
 the same pipelines can run on an HPC node, in a Snakemake/Nextflow
@@ -22,7 +22,7 @@ the GUI exposes.
 Entry point
 -----------
 After ``pip install -e .`` (or ``python -m src.cli ...``) the CLI is
-available as ``nanoentropy`` thanks to the ``[project.scripts]`` entry
+available as ``shannonpore`` thanks to the ``[project.scripts]`` entry
 in ``pyproject.toml``.
 """
 
@@ -49,7 +49,7 @@ from src.io.roi_utils import parse_roi_file_flexible
 
 import subprocess  # noqa: E402  (used by doctor/selftest below)
 
-logger = logging.getLogger("nanoentropy.cli")
+logger = logging.getLogger("shannonpore.cli")
 
 
 # ─────────────────────────── helpers ──────────────────────────────────────
@@ -455,7 +455,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     # ── Executable bit on shell scripts ──
     project_root = Path(__file__).resolve().parent.parent
-    for script in ("install.sh", "clawteam/orchestrate_review.sh"):
+    for script in ("install.sh",):
         p = project_root / script
         if not p.exists():
             check(f"+x {script}", "exists", False, "missing")
@@ -483,7 +483,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     print("─" * 80)
 
     if failures == 0 and advisories == 0:
-        print("[OK] All checks passed. nanoentropy is ready to use.")
+        print("[OK] All checks passed. shannonpore is ready to use.")
         return 0
     if failures == 0:
         # Only advisories — install is functional.
@@ -600,22 +600,22 @@ def _add_entropy_params(p: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="nanoentropy",
+        prog="shannonpore",
         description=(
-            f"nanoentropy v{__version__} — nanopore methylation entropy "
+            f"shannonpore v{__version__} — nanopore methylation entropy "
             "analysis. CLI mirrors the Streamlit GUI."
         ),
         epilog=(
             "Quick links:\n"
-            "  nanoentropy guide       walkthrough of every flow\n"
-            "  nanoentropy examples    cheat-sheet of common commands\n"
-            "  nanoentropy doctor      verify install\n"
-            "  nanoentropy selftest    end-to-end synthetic-BAM smoke test\n\n"
-            "Full docs: https://github.com/uribertocchitau/nanoentropy#readme"
+            "  shannonpore guide       walkthrough of every flow\n"
+            "  shannonpore examples    cheat-sheet of common commands\n"
+            "  shannonpore doctor      verify install\n"
+            "  shannonpore selftest    end-to-end synthetic-BAM smoke test\n\n"
+            "Full docs: https://github.com/uribertocchitau/shannonpore#readme"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    p.add_argument("--version", action="version", version=f"nanoentropy {__version__}")
+    p.add_argument("--version", action="version", version=f"shannonpore {__version__}")
     sub = p.add_subparsers(dest="cmd", required=True, metavar="<subcommand>")
 
     # extract -----------------------------------------------------------------
@@ -695,7 +695,7 @@ def build_parser() -> argparse.ArgumentParser:
             "Pair mode: --pair --control-... --target-..."
         ),
         description=(
-            "End-to-end nanoentropy pipeline.\n\n"
+            "End-to-end shannonpore pipeline.\n\n"
             "Single sample (default):\n"
             "  --bam BAM          one BAM file\n"
             "  --tsv TSV          pre-computed modkit TSV\n"
@@ -766,7 +766,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_e = sub.add_parser(
         "examples",
         help="Print common usage examples.",
-        description="Cheat-sheet of common nanoentropy command lines.",
+        description="Cheat-sheet of common shannonpore command lines.",
     )
     p_e.set_defaults(func=cmd_examples)
 

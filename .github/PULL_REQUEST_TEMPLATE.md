@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to nanoentropy.
+Thanks for contributing to shannonpore.
 Please fill in the sections below. Sections that do not apply may be marked "n/a".
 -->
 
@@ -34,14 +34,14 @@ Results:
 
 ## Doctor / selftest output (if applicable)
 
-<!-- Paste the output of `nanoentropy doctor` and/or `nanoentropy selftest` if this PR
+<!-- Paste the output of `shannonpore doctor` and/or `shannonpore selftest` if this PR
      touches the runtime, CLI, or environment. Otherwise write n/a. -->
 
 ```text
-$ nanoentropy doctor
+$ shannonpore doctor
 ...
 
-$ nanoentropy selftest
+$ shannonpore selftest
 ...
 ```
 

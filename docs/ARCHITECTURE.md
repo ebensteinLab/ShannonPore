@@ -1,4 +1,4 @@
-# Architecture — nanoentropy v4
+# Architecture — shannonpore v4
 
 ## High level
 
@@ -13,8 +13,8 @@
 ┌──────────────────┐   ┌──────────────────┐    ┌─────────────────────┐
 │ src/tabs/        │   │ src/state.py     │    │ src/config.py       │
 │ ├ tab_file_prep  │   │ AppState (DC)    │    │ env-resolved paths │
-│ └ tab_graph_prep │   │ FilePrepState    │    │ NANOENTROPY_REF_DIR │
-└──────────────────┘   │ GraphPrepState   │    │ NANOENTROPY_RES_DIR │
+│ └ tab_graph_prep │   │ FilePrepState    │    │ SHANNONPORE_REF_DIR │
+└──────────────────┘   │ GraphPrepState   │    │ SHANNONPORE_RES_DIR │
         │              └──────────────────┘    │ HG38 / MM10 assets  │
         │                                      └─────────────────────┘
         │
@@ -59,7 +59,7 @@ The GUI ships its own theme via:
 
 - `.streamlit/config.toml` — base palette (light, prussian primary).
 - `src/ui/style.py` — IBM Plex font stack, hairline rules, flat
-  buttons, monospaced metrics, and a `nanoentropy · v4 · GUI` band at
+  buttons, monospaced metrics, and a `shannonpore · v4 · GUI` band at
   the top. Hides Streamlit's MainMenu / footer chrome.
 
 Replaces the generic Streamlit prototype look with something that reads
@@ -87,7 +87,7 @@ Ternary uses `src/pipelines/ternary_entropy.py`; the 2-state modes share
 ## Reference data
 
 Reference FASTAs / GTFs are NOT bundled. Path resolved from
-`NANOENTROPY_REF_DIR` (default `v4/reference_files/`), set via `.env` or
+`SHANNONPORE_REF_DIR` (default `v4/reference_files/`), set via `.env` or
 the user's shell. v4 ships `.env.example` for continuity.
 
 ## Reproducibility chain
@@ -96,9 +96,9 @@ the user's shell. v4 ships `.env.example` for continuity.
 bash install.sh
    ├── conda-lock.yml     (Python · modkit · system libs at exact versions)
    ├── requirements.txt   (== pinned pip deps)
-   ├── pip install -e .   (nanoentropy console script on PATH)
-   ├── nanoentropy doctor (every pinned version, every permission)
-   └── nanoentropy selftest (synthetic-BAM end-to-end pipeline)
+   ├── pip install -e .   (shannonpore console script on PATH)
+   ├── shannonpore doctor (every pinned version, every permission)
+   └── shannonpore selftest (synthetic-BAM end-to-end pipeline)
 ```
 
 If a 2027 user runs `bash install.sh`, they get the 2026 stack.

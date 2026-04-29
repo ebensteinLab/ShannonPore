@@ -2,7 +2,7 @@
 
 Single source of truth for prose used by:
 - the GUI (`Getting started` expander, widget tooltips, glossary)
-- the CLI (`nanoentropy guide`, `nanoentropy examples`)
+- the CLI (`shannonpore guide`, `shannonpore examples`)
 
 Keep these strings short and copy-edited; both surfaces render them
 verbatim.
@@ -11,9 +11,9 @@ verbatim.
 from __future__ import annotations
 
 GUIDE = """\
-# nanoentropy — quick start
+# shannonpore — quick start
 
-`nanoentropy` turns a nanopore BAM (with MM/ML methylation tags) into
+`shannonpore` turns a nanopore BAM (with MM/ML methylation tags) into
 per-CpG methylation entropy bedgraphs you can plot, segment, and
 compare across samples — through either a polished Streamlit GUI or a
 Bash-friendly CLI.
@@ -48,7 +48,7 @@ invocation, producing two parallel sets of bedgraphs.
 
 ## 4.  Run
 
-    nanoentropy run --bam sample.bam --out-dir results/ \\
+    shannonpore run --bam sample.bam --out-dir results/ \\
         --genome hg38 --mode true_mc --threads 16
 
 Outputs land at `<out-dir>/<label>_<mode>.{coverage,me,mml}.bedgraph`.
@@ -58,7 +58,7 @@ A `run_summary.json` file in the output dir lists every produced file.
 
 CLI:
 
-    nanoentropy plot scatter scatter.png \\
+    shannonpore plot scatter scatter.png \\
         --x-bedgraph control.me.bedgraph \\
         --y-bedgraph target.me.bedgraph \\
         --x-label "control ME" --y-label "target ME"
@@ -69,80 +69,80 @@ Just open it and click "render".
 
 ## Verification & troubleshooting
 
-  * `nanoentropy doctor`    — verify every dependency, version, permission
-  * `nanoentropy selftest`  — run a synthetic BAM through the full pipeline
-  * `nanoentropy --help`    — list all subcommands
+  * `shannonpore doctor`    — verify every dependency, version, permission
+  * `shannonpore selftest`  — run a synthetic BAM through the full pipeline
+  * `shannonpore --help`    — list all subcommands
 """
 
 
 EXAMPLES = """\
-# nanoentropy — common recipes
+# shannonpore — common recipes
 
 # Single sample, BAM input
-nanoentropy run \\
+shannonpore run \\
     --bam sample.bam \\
     --out-dir results/sample \\
     --genome hg38 --mode true_mc \\
     --cpgs-per-bin 4 --min-coverage 16 --threads 16
 
 # Single sample, label-prefixed outputs
-nanoentropy run \\
+shannonpore run \\
     --bam sample.bam --label patient42 \\
     --out-dir results/ \\
     --genome hg38 --mode true_mc
 
 # Folder of BAMs (auto merge+sort+index)
-nanoentropy run \\
+shannonpore run \\
     --bam-folder /lab/runs/2026-04/bams \\
     --label batch_2026_04 \\
     --out-dir results/ \\
     --genome hg38 --mode true_mc --threads 32
 
 # Pair mode (control vs target)
-nanoentropy run --pair \\
+shannonpore run --pair \\
     --control-bam ctrl.bam --control-label control \\
     --target-bam tgt.bam   --target-label treated \\
     --out-dir results/pair --genome hg38 --mode true_mc
 
 # Pair mode, both sides are folders of BAMs
-nanoentropy run --pair \\
+shannonpore run --pair \\
     --control-bam-folder /lab/runs/control \\
     --target-bam-folder  /lab/runs/treated \\
     --out-dir results/pair --genome hg38
 
 # Ternary mode (5hmC-aware) — needs high coverage (3^k)
-nanoentropy run \\
+shannonpore run \\
     --bam sample.bam --out-dir results/ \\
     --genome hg38 --mode ternary \\
     --cpgs-per-bin 3 --min-coverage 27
 
 # Just modkit extract (BAM → TSV)
-nanoentropy extract --bam sample.bam sample.tsv --genome hg38 --threads 8
+shannonpore extract --bam sample.bam sample.tsv --genome hg38 --threads 8
 
 # Just entropy from a pre-computed TSV
-nanoentropy entropy sample.tsv out/sample \\
+shannonpore entropy sample.tsv out/sample \\
     --genome hg38 --mode bisulfite --cpgs-per-bin 4
 
 # Plot density scatter of two samples
-nanoentropy plot hexbin scatter.png \\
+shannonpore plot hexbin scatter.png \\
     --x-bedgraph control.me.bedgraph \\
     --y-bedgraph treated.me.bedgraph \\
     --x-label "control ME" --y-label "treated ME"
 
 # Distribution of ME values
-nanoentropy plot distribution dist.png \\
+shannonpore plot distribution dist.png \\
     --x-bedgraph sample.me.bedgraph --dist-kind violin
 
 # Verify install
-nanoentropy doctor
-nanoentropy selftest
+shannonpore doctor
+shannonpore selftest
 """
 
 
 # ─── GUI-only help snippets ───────────────────────────────────────────────
 
 GUI_GETTING_STARTED = """\
-**nanoentropy** computes per-CpG methylation entropy from nanopore reads.
+**shannonpore** computes per-CpG methylation entropy from nanopore reads.
 You feed it a BAM (or a folder of BAMs, or a pre-computed modkit TSV) and
 it produces three bedgraphs you can plot in the next tab:
 

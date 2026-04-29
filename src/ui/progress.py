@@ -1,4 +1,4 @@
-"""Unified progress reporting for nanoentropy.
+"""Unified progress reporting for shannonpore.
 
 Two adapters share one abstract interface so pipeline code stays
 agnostic to whether it's running under Streamlit or a Bash CLI:

@@ -1,4 +1,4 @@
-"""Visual identity for nanoentropy.
+"""Visual identity for shannonpore.
 
 A small CSS injection + a header component to replace Streamlit's
 default chrome with something that looks like a piece of laboratory
@@ -237,12 +237,12 @@ def header_band(version: str, *, kind: str = "GUI") -> None:
     """Draw a thin product-identity band above the page title.
 
     Replaces the generic Streamlit `st.title` chrome with a small
-    'NANOENTROPY · v0.1.0 · GUI' marker bar.
+    'SHANNONPORE · v0.1.0 · GUI' marker bar.
     """
     st.markdown(
         f"""
         <div class="ne-band">
-          <span class="ne-mark">nanoentropy</span>
+          <span class="ne-mark">shannonpore</span>
           <span class="ne-version">v{version}</span>
           <span class="ne-spacer"></span>
           <span class="ne-tag">{kind} · methylation entropy</span>

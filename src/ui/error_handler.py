@@ -14,7 +14,7 @@ import traceback
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-logger = logging.getLogger("nanoentropy")
+logger = logging.getLogger("shannonpore")
 
 F = TypeVar("F", bound=Callable[..., Any])
 

@@ -15,9 +15,9 @@ def test_env_var_overrides_default_reference_dir(
 ) -> None:
     fake_ref = tmp_path / "ref"
     fake_ref.mkdir()
-    monkeypatch.setenv("NANOENTROPY_REF_DIR", str(fake_ref))
+    monkeypatch.setenv("SHANNONPORE_REF_DIR", str(fake_ref))
     monkeypatch.setenv(
-        "NANOENTROPY_RESULTS_DIR", str(tmp_path / "results")
+        "SHANNONPORE_RESULTS_DIR", str(tmp_path / "results")
     )
 
     import src.config as cfg

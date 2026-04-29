@@ -1,18 +1,18 @@
-# bash completion for `nanoentropy`
+# bash completion for `shannonpore`
 #
 # Install (one-shot):
-#   source /path/to/nanoentropy.bash-completion
+#   source /path/to/shannonpore.bash-completion
 #
 # Install (permanent, current user):
 #   mkdir -p ~/.local/share/bash-completion/completions
-#   cp nanoentropy.bash-completion \
-#       ~/.local/share/bash-completion/completions/nanoentropy
+#   cp shannonpore.bash-completion \
+#       ~/.local/share/bash-completion/completions/shannonpore
 #
 # Install (permanent, system-wide):
-#   sudo cp nanoentropy.bash-completion \
-#       /etc/bash_completion.d/nanoentropy
+#   sudo cp shannonpore.bash-completion \
+#       /etc/bash_completion.d/shannonpore
 
-_nanoentropy_complete() {
+_shannonpore_complete() {
     local cur prev words cword
     _init_completion -n : 2>/dev/null || {
         cur="${COMP_WORDS[COMP_CWORD]}"
@@ -24,7 +24,7 @@ _nanoentropy_complete() {
     local subcommands="extract entropy plot run doctor selftest"
     local global_opts="--help --version"
 
-    # Find the subcommand (first non-flag word after `nanoentropy`)
+    # Find the subcommand (first non-flag word after `shannonpore`)
     local sub="" i
     for (( i=1; i<cword; i++ )); do
         if [[ "${words[i]}" != -* ]]; then
@@ -107,4 +107,4 @@ _nanoentropy_complete() {
     fi
 }
 
-complete -F _nanoentropy_complete nanoentropy
+complete -F _shannonpore_complete shannonpore

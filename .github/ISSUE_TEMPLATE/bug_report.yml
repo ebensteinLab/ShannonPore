@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem with nanoentropy
+description: Report a reproducible problem with shannonpore
 title: "[bug] <short description>"
 labels:
   - bug
@@ -9,7 +9,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to file a bug. Please fill in the fields below.
-        If the problem might be environment-related, paste the output of `nanoentropy doctor`.
+        If the problem might be environment-related, paste the output of `shannonpore doctor`.
 
   - type: textarea
     id: description
@@ -81,8 +81,8 @@ body:
   - type: textarea
     id: doctor
     attributes:
-      label: nanoentropy doctor output
-      description: Paste the full output of `nanoentropy doctor` if available.
+      label: shannonpore doctor output
+      description: Paste the full output of `shannonpore doctor` if available.
       render: shell
     validations:
       required: false

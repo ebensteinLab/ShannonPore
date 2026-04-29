@@ -4,7 +4,7 @@
 #
 # Then `bash install.sh` reads conda-lock.yml for bit-for-bit reproducible
 # installs. The lockfile pins exact builds across linux-64 / osx-arm64.
-name: nanoentropy
+name: shannonpore
 channels:
   - conda-forge
   - bioconda

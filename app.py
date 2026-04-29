@@ -1,4 +1,4 @@
-"""nanoentropy v4 — Streamlit entrypoint.
+"""shannonpore v4 — Streamlit entrypoint.
 
 Slim entrypoint. All feature logic lives in `src/tabs/`, all state in
 `src/state.py`, all plots in `src/plots/`, all pipelines in
@@ -34,15 +34,15 @@ logging.basicConfig(
 )
 
 st.set_page_config(
-    page_title=f"nanoentropy v{__version__}",
+    page_title=f"shannonpore v{__version__}",
     page_icon="◉",
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        "Get Help": "https://github.com/uribertocchitau/nanoentropy",
-        "Report a bug": "https://github.com/uribertocchitau/nanoentropy/issues",
+        "Get Help": "https://github.com/uribertocchitau/shannonpore",
+        "Report a bug": "https://github.com/uribertocchitau/shannonpore/issues",
         "About": (
-            f"**nanoentropy v{__version__}**  \n"
+            f"**shannonpore v{__version__}**  \n"
             "Nanopore methylation entropy analysis.  \n"
             "Ebenstein Lab · Tel Aviv University."
         ),
@@ -61,7 +61,7 @@ def _sidebar() -> None:
               <div style="font-family:'IBM Plex Mono',monospace;
                           font-size:0.78rem;letter-spacing:0.18em;
                           text-transform:uppercase;color:#0f4c75;
-                          font-weight:600;">nanoentropy</div>
+                          font-weight:600;">shannonpore</div>
               <div style="font-family:'IBM Plex Mono',monospace;
                           font-size:0.72rem;color:#7a7a78;
                           margin-top:0.15rem;">v{__version__} · methylation entropy</div>
@@ -92,7 +92,7 @@ def _sidebar() -> None:
 
         if not REFERENCE_DIR.exists():
             st.warning(
-                "REFERENCE_DIR does not exist. Set `NANOENTROPY_REF_DIR` "
+                "REFERENCE_DIR does not exist. Set `SHANNONPORE_REF_DIR` "
                 "to your reference files directory."
             )
 
@@ -109,9 +109,9 @@ def _sidebar() -> None:
               <div>ebenstein lab</div>
               <div>tel aviv university</div>
               <div style="margin-top:0.3rem;">
-                <a href="https://github.com/uribertocchitau/nanoentropy"
+                <a href="https://github.com/uribertocchitau/shannonpore"
                    style="color:#9a9a98;text-decoration:none;">
-                  github.com/uribertocchitau/nanoentropy</a>
+                  github.com/uribertocchitau/shannonpore</a>
               </div>
             </div>
             """,

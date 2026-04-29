@@ -1,4 +1,4 @@
-# Install & verification — nanoentropy v4
+# Install & verification — shannonpore v4
 
 This page documents the full install flow. Goal: a user who downloads
 v4 today and runs `bash install.sh` should have a fully working GUI +
@@ -8,11 +8,11 @@ reproduce the 2026 stack bit-for-bit.
 ## TL;DR
 
 ```bash
-git clone https://github.com/uribertocchitau/nanoentropy.git && cd nanoentropy
+git clone https://github.com/uribertocchitau/shannonpore.git && cd shannonpore
 bash install.sh
-conda activate nanoentropy
-nanoentropy doctor      # auto-checks every dep + permission
-nanoentropy selftest    # synthetic-BAM end-to-end smoke test
+conda activate shannonpore
+shannonpore doctor      # auto-checks every dep + permission
+shannonpore selftest    # synthetic-BAM end-to-end smoke test
 ```
 
 ## Reference data (multi-GiB)
@@ -24,21 +24,21 @@ ships its own synthetic FASTA so you can verify the install end-to-end
 without fetching anything multi-GiB.
 
 `REFERENCE_DIR` defaults to `<repo>/reference_files/`. You only need
-to set `NANOENTROPY_REF_DIR` if you want it to point somewhere else
+to set `SHANNONPORE_REF_DIR` if you want it to point somewhere else
 (e.g. a shared lab volume). Three ways to populate it:
 
 ```bash
 # 1. Have install.sh fetch into the default location
-NANOENTROPY_DOWNLOAD_REFERENCES=hg38 bash install.sh   # ~3.2 GiB
-NANOENTROPY_DOWNLOAD_REFERENCES=mm10 bash install.sh   # ~2.8 GiB
-NANOENTROPY_DOWNLOAD_REFERENCES=1    bash install.sh   # both
+SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh   # ~3.2 GiB
+SHANNONPORE_DOWNLOAD_REFERENCES=mm10 bash install.sh   # ~2.8 GiB
+SHANNONPORE_DOWNLOAD_REFERENCES=1    bash install.sh   # both
 
 # 2. Run install.sh now (skips refs), fetch later
 bash install.sh
 bash scripts/setup_references.sh --genome hg38
 
 # 3. Use FASTAs you already have at a different path
-NANOENTROPY_REF_DIR=/path/to/your/refs bash install.sh
+SHANNONPORE_REF_DIR=/path/to/your/refs bash install.sh
 ```
 
 You can also bypass `REFERENCE_DIR` entirely and pass `--fasta` to the
@@ -51,42 +51,42 @@ CLI or use the "custom FASTA" field in the GUI per invocation.
    `~/.local/bin` (no admin rights needed).
 2. **Creates the env** — from `conda-lock.yml` (preferred; bit-for-bit)
    or `environment.yml` (fallback; resolver may pick newer transitives).
-   Env name: `nanoentropy`.
+   Env name: `shannonpore`.
 3. **Pip belt-and-braces** — `pip install --no-deps -r requirements.txt`
    into the env to backstop any pip-only deps.
-4. **Permissions** — `chmod +x` on `install.sh`, `bin/nanoentropy`,
-   `clawteam/orchestrate_review.sh`.
+4. **Permissions** — `chmod +x` on `install.sh`, `bin/shannonpore`,
+   `scripts/setup_references.sh`.
 5. **Editable install** — `pip install --no-deps -e .` so the
-   `nanoentropy` console script lands on PATH.
-6. **Bash completion** — copies `bin/nanoentropy.bash-completion` to
-   `~/.local/share/bash-completion/completions/nanoentropy` so tab
+   `shannonpore` console script lands on PATH.
+6. **Bash completion** — copies `bin/shannonpore.bash-completion` to
+   `~/.local/share/bash-completion/completions/shannonpore` so tab
    completion works in subsequent shells.
-7. **Doctor** — runs `nanoentropy doctor` to verify Python version, all
+7. **Doctor** — runs `shannonpore doctor` to verify Python version, all
    pinned Python packages, modkit, samtools, `REFERENCE_DIR`,
    `RESULTS_DIR` writability, and executable bits.
-8. **Selftest** — runs `nanoentropy selftest` which synthesises a tiny
+8. **Selftest** — runs `shannonpore selftest` which synthesises a tiny
    FASTA + BAM with MM/ML methylation tags and pipes it through
    modkit → entropy → bedgraphs for `true_mc` and `bisulfite` modes.
 
 To skip the selftest (e.g. on a slow CI runner), set
-`NANOENTROPY_SKIP_SELFTEST=1` before `bash install.sh`. Reference FASTAs
+`SHANNONPORE_SKIP_SELFTEST=1` before `bash install.sh`. Reference FASTAs
 are NOT downloaded by default — see the *Reference data* section above
 for the three ways to populate them.
 
-## What `nanoentropy doctor` checks
+## What `shannonpore doctor` checks
 
 | Component | Expected | Action if failing |
 |---|---|---|
 | `python` | `>=3.10` | re-run install.sh |
 | 10 pinned Python packages | exact `==` versions | re-run install.sh |
 | `modkit` | `0.6.0` | re-run install.sh; check conda env active |
-| `REFERENCE_DIR` | exists | set `NANOENTROPY_REF_DIR` env var |
+| `REFERENCE_DIR` | exists | set `SHANNONPORE_REF_DIR` env var |
 | `RESULTS_DIR` | writable | check filesystem permissions |
-| `+x install.sh`, `+x clawteam/orchestrate_review.sh` | executable bit set | re-run install.sh |
+| `+x install.sh` | executable bit set | re-run install.sh |
 
 Doctor exits `0` only when every check passes; non-zero otherwise.
 
-## What `nanoentropy selftest` checks
+## What `shannonpore selftest` checks
 
 Synthesises:
 
@@ -96,7 +96,7 @@ Synthesises:
 Then runs the full CLI pipeline:
 
 ```
-nanoentropy run --bam tiny.bam --fasta tiny.fa --out-dir out/<mode> ...
+shannonpore run --bam tiny.bam --fasta tiny.fa --out-dir out/<mode> ...
 ```
 
 for `--mode true_mc` and `--mode bisulfite` (and `--mode ternary` if you
@@ -109,7 +109,7 @@ failure with the offending mode's stdout/stderr printed.
 ## Reference data
 
 v4 does **not** ship the multi-GB reference FASTAs. Set
-`NANOENTROPY_REF_DIR` to a directory containing:
+`SHANNONPORE_REF_DIR` to a directory containing:
 
 ```
 hg38.fa, hg38.fa.fai
@@ -127,7 +127,7 @@ cp .env.example .env
 source .env
 ```
 
-The doctor flags a missing `NANOENTROPY_REF_DIR`; selftest doesn't need
+The doctor flags a missing `SHANNONPORE_REF_DIR`; selftest doesn't need
 it (the synthetic FASTA is self-contained).
 
 ## Reproducibility year-over-year
@@ -143,9 +143,9 @@ upgrade).
 
 ## Bash completion
 
-`install.sh` copies `bin/nanoentropy.bash-completion` to
-`~/.local/share/bash-completion/completions/nanoentropy`. Open a new
-shell and tab-complete on `nanoentropy <Tab>`. Completes:
+`install.sh` copies `bin/shannonpore.bash-completion` to
+`~/.local/share/bash-completion/completions/shannonpore`. Open a new
+shell and tab-complete on `shannonpore <Tab>`. Completes:
 
 - subcommands (`extract`, `entropy`, `plot`, `run`, `doctor`, `selftest`)
 - option flags per subcommand
@@ -156,15 +156,15 @@ shell and tab-complete on `nanoentropy <Tab>`. Completes:
 
 ## Rolling back
 
-`conda env remove -n nanoentropy` cleanly removes the v4 env without
+`conda env remove -n shannonpore` cleanly removes the v4 env without
 touching any other env.
 
 ## Troubleshooting
 
 ```bash
-nanoentropy doctor                       # something broke after install
-nanoentropy selftest --include-ternary   # exercise full pipeline
+shannonpore doctor                       # something broke after install
+shannonpore selftest --include-ternary   # exercise full pipeline
 streamlit run app.py 2>&1 | tee app.log  # GUI crashes
-which nanoentropy                        # confirm console script on PATH
+which shannonpore                        # confirm console script on PATH
 python -m src.cli --help                 # equivalent direct invocation
 ```

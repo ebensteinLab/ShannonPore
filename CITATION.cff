@@ -1,14 +1,14 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "nanoentropy: Nanopore methylation entropy analysis toolkit"
+title: "shannonpore: Nanopore methylation entropy analysis toolkit"
 version: "0.1.0"
 date-released: "2026-04-29"
 type: software
 license: MIT
-repository-code: "https://github.com/uribertocchitau/nanoentropy"
-url: "https://github.com/uribertocchitau/nanoentropy"
+repository-code: "https://github.com/uribertocchitau/shannonpore"
+url: "https://github.com/uribertocchitau/shannonpore"
 abstract: >-
-  nanoentropy is a Streamlit GUI and CLI for nanopore methylation entropy
+  shannonpore is a Streamlit GUI and CLI for nanopore methylation entropy
   analysis. It computes methylation entropy (ME), mean methylation level
   (MML), and coverage bedgraphs from modkit-extracted CpG calls, performs
   block segmentation, runs GO enrichment via an R bridge, and produces

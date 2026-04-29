@@ -221,7 +221,7 @@ def test_bam_partial_methylation_produces_nonzero_entropy(tmp_path: Path) -> Non
 def test_cli_run_on_bam_produces_same_bedgraphs_as_orchestrator(
     tmp_path: Path,
 ) -> None:
-    """Sanity: invoking `nanoentropy run` from Bash must produce identical
+    """Sanity: invoking `shannonpore run` from Bash must produce identical
     bedgraphs to calling the Python orchestrator directly."""
     fa, bam = _build_uniform_bam(tmp_path / "fixture", methylated=True)
 

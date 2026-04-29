@@ -1,6 +1,6 @@
 <div align="center">
 
-# nanoentropy
+# shannonpore
 
 **Nanopore methylation entropy analysis — GUI + CLI**
 
@@ -8,8 +8,8 @@ Per-CpG methylation entropy (ME), mean methylation level (MML), and coverage fro
 modkit-extracted nanopore reads. Three modes for handling 5hmC: True-mC,
 Bisulfite-equivalent, and Ternary (3-state).
 
-[![CI](https://github.com/uribertocchitau/nanoentropy/actions/workflows/ci.yml/badge.svg)](https://github.com/uribertocchitau/nanoentropy/actions/workflows/ci.yml)
-[![Streamlit smoke](https://github.com/uribertocchitau/nanoentropy/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/uribertocchitau/nanoentropy/actions/workflows/streamlit-smoke.yml)
+[![CI](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml)
+[![Streamlit smoke](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-31012/)
 [![Streamlit 1.51](https://img.shields.io/badge/streamlit-1.51-ff4b4b.svg)](https://streamlit.io)
@@ -22,7 +22,7 @@ Bisulfite-equivalent, and Ternary (3-state).
 
 ## What it does
 
-`nanoentropy` turns a nanopore BAM with methylation tags (`MM`/`ML`) into
+`shannonpore` turns a nanopore BAM with methylation tags (`MM`/`ML`) into
 per-CpG entropy bedgraphs you can plot, segment, and compare across
 samples — through either a polished Streamlit GUI or a Bash-friendly CLI.
 
@@ -68,37 +68,37 @@ Requires conda/mamba/micromamba. The installer auto-bootstraps micromamba
 into `~/.local/bin` if none is present.
 
 ```bash
-git clone https://github.com/uribertocchitau/nanoentropy.git
-cd nanoentropy
+git clone https://github.com/uribertocchitau/shannonpore.git
+cd shannonpore
 bash install.sh
 ```
 
 The installer:
 
 1. Resolves a conda CLI (or installs micromamba — no admin needed).
-2. Creates the `nanoentropy` environment from `conda-lock.yml`.
-3. `pip install -e .` so `nanoentropy` lands on `PATH`.
+2. Creates the `shannonpore` environment from `conda-lock.yml`.
+3. `pip install -e .` so `shannonpore` lands on `PATH`.
 4. Installs Bash completion to `~/.local/share/bash-completion/completions/`.
-5. Runs `nanoentropy doctor` (every pinned version, every permission).
-6. Runs `nanoentropy selftest` (synthetic-BAM end-to-end pipeline).
+5. Runs `shannonpore doctor` (every pinned version, every permission).
+6. Runs `shannonpore selftest` (synthetic-BAM end-to-end pipeline).
 
 If both pass, the install is fully functional. See [docs/INSTALL.md](docs/INSTALL.md)
 for the full verification flow.
 
 ```bash
 # After install:
-conda activate nanoentropy
+conda activate shannonpore
 
 # Run the GUI
 streamlit run app.py
 # or the CLI
-nanoentropy --help
+shannonpore --help
 ```
 
 **Reference data**: by default the tool looks in `<repo>/reference_files/`
 for FASTAs + GTFs. Either populate that directory (run
 `bash scripts/setup_references.sh --genome hg38`), pass `--fasta` /
-"custom FASTA" per invocation, or set `NANOENTROPY_REF_DIR` to a folder
+"custom FASTA" per invocation, or set `SHANNONPORE_REF_DIR` to a folder
 you already have. `selftest` doesn't need any of this — it builds its
 own synthetic FASTA.
 
@@ -120,40 +120,40 @@ plot.
 
 ```bash
 # Print the walkthrough or cheat-sheet
-nanoentropy guide
-nanoentropy examples
+shannonpore guide
+shannonpore examples
 
 # Single sample (BAM)
-nanoentropy run \
+shannonpore run \
     --bam sample.bam --label patient42 \
     --out-dir results/ \
     --genome hg38 --mode true_mc --threads 16
 
 # Folder of BAMs — merge + sort + index automatically
-nanoentropy run \
+shannonpore run \
     --bam-folder /lab/runs/2026-04/bams \
     --label batch_2026_04 \
     --out-dir results/ \
     --genome hg38 --mode true_mc --threads 32
 
 # Pair mode (control vs target) — BAM folders on both sides
-nanoentropy run --pair \
+shannonpore run --pair \
     --control-bam-folder /lab/runs/control \
     --target-bam-folder  /lab/runs/treated \
     --out-dir results/pair --genome hg38
 
 # Just the modkit extract step (BAM or folder → TSV)
-nanoentropy extract --bam       sample.bam   sample.tsv  --genome hg38
-nanoentropy extract --bam-folder /lab/runs   merged.tsv  --genome hg38
+shannonpore extract --bam       sample.bam   sample.tsv  --genome hg38
+shannonpore extract --bam-folder /lab/runs   merged.tsv  --genome hg38
 
 # Plot
-nanoentropy plot hexbin scatter.png \
+shannonpore plot hexbin scatter.png \
     --x-bedgraph control.me.bedgraph --y-bedgraph treated.me.bedgraph \
     --x-label "control ME" --y-label "treated ME"
 
 # Verify install / debug
-nanoentropy doctor
-nanoentropy selftest --include-ternary
+shannonpore doctor
+shannonpore selftest --include-ternary
 ```
 
 Tab completion (subcommands · options · mode/genome enums · file
@@ -189,8 +189,8 @@ your `--min-coverage`. The GUI does the same in Tab 1.
 v4/
 ├── app.py                       # Streamlit entrypoint (<200 lines)
 ├── bin/
-│   ├── nanoentropy              # bash launcher (works without pip install)
-│   └── nanoentropy.bash-completion
+│   ├── shannonpore              # bash launcher (works without pip install)
+│   └── shannonpore.bash-completion
 ├── install.sh                   # idempotent installer
 ├── conda-lock.yml               # bit-for-bit reproducible env (generated)
 ├── environment.yml              # high-level conda spec
@@ -214,7 +214,6 @@ v4/
 │   ├── integration/             # CLI, doctor/selftest, full-pipeline-on-BAM, pair, folder-merge
 │   ├── e2e/                     # Streamlit AppTest smoke
 │   └── fixtures/                # synthetic FASTA + BAM-with-MM/ML-tags builder
-├── clawteam/                    # adversarial review framework (optional)
 └── docs/
     ├── ARCHITECTURE.md
     ├── INSTALL.md
@@ -225,7 +224,7 @@ v4/
 
 ## Citation
 
-If you use `nanoentropy` in published work, please cite via the
+If you use `shannonpore` in published work, please cite via the
 [`CITATION.cff`](CITATION.cff) file (GitHub renders a "Cite this repository"
 button on the right sidebar).
 

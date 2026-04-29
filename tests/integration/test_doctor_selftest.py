@@ -1,4 +1,4 @@
-"""Integration tests for `nanoentropy doctor` and `nanoentropy selftest`.
+"""Integration tests for `shannonpore doctor` and `shannonpore selftest`.
 
 Both subcommands are entrypoints to the post-install verification flow.
 We exercise them as the user would after running `bash install.sh`.

@@ -6,7 +6,7 @@ fallback while you adopt v4. Only delete v3 (or rename to
 
 ## What stays the same
 
-- **Reference files** — v4 reads from `NANOENTROPY_REF_DIR` which by
+- **Reference files** — v4 reads from `SHANNONPORE_REF_DIR` which by
   default points at the v3 `reference_files/` directory. No multi-GB
   FASTAs are duplicated.
 - **Output layout** — v4 creates `results/` with the same per-run
@@ -24,7 +24,7 @@ v3 had no `requirements.txt`. v4 ships:
 - `environment.yml` (conda spec; Python + modkit + system libs)
 - `conda-lock.yml` (bit-for-bit lockfile)
 - `install.sh` (one-command installer)
-- `nanoentropy doctor` + `nanoentropy selftest` for verification
+- `shannonpore doctor` + `shannonpore selftest` for verification
 
 ### 2. Code is modular
 
@@ -54,7 +54,7 @@ traceback and surfaces a friendly message in the UI.
 The ternary pipeline is `src/pipelines/ternary_entropy.py`, ported from
 `5hmc_confound_analysis/analysis/ternary_entropy.py`.
 
-### 6. CLI — `nanoentropy` console script
+### 6. CLI — `shannonpore` console script
 
 v3 had no CLI; the Streamlit GUI was the only interface. v4 ships a
 Bash-friendly CLI with subcommands `extract`, `entropy`, `plot`, `run`,
@@ -93,11 +93,11 @@ BAMs that modkit extracts from.
 
 ## Migration checklist
 
-1. `cd v4 && bash install.sh` — produces `nanoentropy` conda env.
+1. `cd v4 && bash install.sh` — produces `shannonpore` conda env.
 2. `cp .env.example .env` and edit if your reference paths differ.
-3. `source .env && conda activate nanoentropy`.
-4. `nanoentropy doctor` (must exit 0).
-5. `nanoentropy selftest` (must exit 0).
+3. `source .env && conda activate shannonpore`.
+4. `shannonpore doctor` (must exit 0).
+5. `shannonpore selftest` (must exit 0).
 6. `streamlit run app.py` — verify both tabs render.
 7. Reproduce one of your v3 runs: same BAM + same genome → same
    bedgraphs (numerical tolerance ~1e-6).
@@ -111,5 +111,5 @@ If v4 misbehaves:
 - v3 is fully intact. `cd ../v3 && streamlit run app.py` resumes the v3
   workflow.
 - v4 results live in `v4/results/`; they are independent of v3.
-- The conda env `nanoentropy` can be removed without affecting v3:
-  `conda env remove -n nanoentropy`.
+- The conda env `shannonpore` can be removed without affecting v3:
+  `conda env remove -n shannonpore`.

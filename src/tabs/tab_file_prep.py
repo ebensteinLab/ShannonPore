@@ -131,7 +131,7 @@ def _run(out_dir: Path) -> dict:
 
     target_result = None
     control_result = None
-    with StreamlitProgress("nanoentropy pipeline") as bar:
+    with StreamlitProgress("shannonpore pipeline") as bar:
         def progress_and_bar(msg: str) -> None:
             progress(msg)
             bar.status(msg)

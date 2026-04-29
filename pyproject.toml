@@ -32,13 +32,6 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
-
-[project.urls]
-Homepage = "https://github.com/uribertocchitau/nanoentropy"
-Repository = "https://github.com/uribertocchitau/nanoentropy"
-Issues = "https://github.com/uribertocchitau/nanoentropy/issues"
-Documentation = "https://github.com/uribertocchitau/nanoentropy#readme"
-
 dependencies = [
     "streamlit==1.51.0",
     "pandas==2.2.3",
@@ -61,6 +54,12 @@ dev = [
     "black==24.10.0",
     "mypy==1.13.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/uribertocchitau/nanoentropy"
+Repository = "https://github.com/uribertocchitau/nanoentropy"
+Issues = "https://github.com/uribertocchitau/nanoentropy/issues"
+Documentation = "https://github.com/uribertocchitau/nanoentropy#readme"
 
 [project.scripts]
 nanoentropy = "src.cli:main"

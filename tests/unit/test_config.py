@@ -139,3 +139,112 @@ def test_ensure_genome_gtf_failure_raises_runtime_error_and_cleans_up(
     # The half-written file must NOT survive — otherwise next ensure_*
     # call would happily return a corrupt GTF.
     assert not expected.exists()
+
+
+# ─── ensure_genome_fasta ──────────────────────────────────────────────────
+
+
+@pytest.mark.unit
+def test_ensure_genome_fasta_short_circuits_when_indexed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """Already-cached FASTA + .fai → no download, no samtools call."""
+    monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
+    monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
+    import src.config as cfg
+    importlib.reload(cfg)
+
+    fa = cfg.GENOMES["hg38"].fasta
+    fa.parent.mkdir(parents=True, exist_ok=True)
+    fa.write_bytes(b">chr1\nACGT\n")
+    Path(str(fa) + ".fai").write_bytes(b"chr1\t4\t6\t4\t5\n")
+
+    called = {"download": 0, "gunzip": 0}
+
+    def fail_download(url, dest, *, progress_cb=None):  # noqa: ANN001
+        called["download"] += 1
+        raise RuntimeError("should not be called")
+
+    def fail_gunzip(src_gz, dest, *, progress_cb=None):  # noqa: ANN001
+        called["gunzip"] += 1
+        raise RuntimeError("should not be called")
+
+    monkeypatch.setattr(cfg, "_download_to", fail_download)
+    monkeypatch.setattr(cfg, "_gunzip_to", fail_gunzip)
+
+    out = cfg.ensure_genome_fasta("hg38")
+    assert out == fa
+    assert called == {"download": 0, "gunzip": 0}
+
+
+@pytest.mark.unit
+def test_ensure_genome_fasta_downloads_and_indexes(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    """Cold cache → download .gz, gunzip, samtools faidx (mocked)."""
+    monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
+    monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
+    import src.config as cfg
+    importlib.reload(cfg)
+
+    fa = cfg.GENOMES["mm10"].fasta
+    assert not fa.exists()
+
+    sequence: list[str] = []
+
+    def fake_download(url, dest, *, progress_cb=None):  # noqa: ANN001
+        sequence.append("download")
+        Path(dest).parent.mkdir(parents=True, exist_ok=True)
+        Path(dest).write_bytes(b"FASTA-GZ-BYTES")
+
+    def fake_gunzip(src_gz, dest, *, progress_cb=None):  # noqa: ANN001
+        sequence.append("gunzip")
+        Path(dest).write_bytes(b">chr1\nACGT\n")
+
+    class FakeProc:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run(cmd, **_kw):  # noqa: ANN001
+        sequence.append(f"run:{cmd[0]}")
+        # Simulate samtools faidx producing the index.
+        Path(str(fa) + ".fai").write_bytes(b"chr1\t4\t6\t4\t5\n")
+        return FakeProc()
+
+    monkeypatch.setattr(cfg, "_download_to", fake_download)
+    monkeypatch.setattr(cfg, "_gunzip_to", fake_gunzip)
+    monkeypatch.setattr(cfg.shutil, "which", lambda _name: "/usr/bin/samtools")
+    monkeypatch.setattr(cfg.subprocess, "run", fake_run)
+
+    out = cfg.ensure_genome_fasta("mm10")
+    assert out == fa
+    assert sequence == ["download", "gunzip", "run:samtools"]
+    assert fa.exists()
+    assert Path(str(fa) + ".fai").exists()
+
+
+@pytest.mark.unit
+def test_ensure_genome_fasta_failure_cleans_up_partials(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path,
+) -> None:
+    monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
+    monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
+    import src.config as cfg
+    importlib.reload(cfg)
+
+    fa = cfg.GENOMES["mm10"].fasta
+    fa_gz = fa.with_suffix(".fa.gz")
+
+    def half_download(url, dest, *, progress_cb=None):  # noqa: ANN001
+        Path(dest).parent.mkdir(parents=True, exist_ok=True)
+        Path(dest).write_bytes(b"HALFWRITTEN")
+        raise OSError("network died")
+
+    monkeypatch.setattr(cfg, "_download_to", half_download)
+
+    with pytest.raises(RuntimeError, match="Failed to provision"):
+        cfg.ensure_genome_fasta("mm10")
+    # No half-written FASTA, no leftover .gz, no .partial files.
+    assert not fa.exists()
+    assert not fa_gz.exists()

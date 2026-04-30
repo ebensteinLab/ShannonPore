@@ -15,7 +15,13 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from src.config import GENOMES, RESULTS_DIR, assets_for, ensure_dirs
+from src.config import (
+    GENOMES,
+    RESULTS_DIR,
+    assets_for,
+    ensure_dirs,
+    ensure_genome_fasta,
+)
 from src.constants import (
     ENTROPY_MODE_HELP,
     ENTROPY_MODE_LABELS,
@@ -117,10 +123,29 @@ def _sample_inputs(
 @show_error(user_message="File preparation failed. See traceback below.")
 def _run(out_dir: Path) -> dict:
 
+    import streamlit as st
+
     state = get_state()
     fp = state.file_prep
-    fasta = (fp.custom_fasta if fp.custom_fasta
-             else assets_for(fp.genome).fasta)
+
+    # Resolve FASTA — auto-download the bundled genome FASTA on first use
+    # if the user hasn't supplied a custom one. modkit needs the .fai
+    # index next to the .fa, which `ensure_genome_fasta` builds via
+    # `samtools faidx`.
+    if fp.custom_fasta:
+        fasta = fp.custom_fasta
+    else:
+        bundled = assets_for(fp.genome).fasta
+        if bundled.exists() and Path(str(bundled) + ".fai").exists():
+            fasta = bundled
+        else:
+            with st.spinner(
+                f"First-time setup: downloading + indexing {fp.genome} "
+                f"FASTA (~1 GB compressed → ~3 GB unzipped). "
+                f"This is a one-time cost; subsequent runs reuse the cached file."
+            ):
+                fasta = ensure_genome_fasta(fp.genome)
+            st.success(f"FASTA ready at `{fasta}`")
     out_dir = Path(ensure_writable_dir(str(out_dir), "Output dir"))
     progress_lines: list[str] = []
 
@@ -348,6 +373,31 @@ def render() -> None:
         genome=genome,
         custom_fasta=Path(custom) if custom else None,
     )
+
+    # Show whether the bundled FASTA is on disk; offer a one-click prefetch.
+    if not custom:
+        bundled_fa = assets_for(genome).fasta
+        bundled_fai = Path(str(bundled_fa) + ".fai")
+        if bundled_fa.exists() and bundled_fai.exists():
+            st.caption(
+                f"✅ {genome} FASTA + .fai cached at `{bundled_fa}`"
+            )
+        else:
+            st.warning(
+                f"{genome} FASTA not yet on disk. It will auto-download "
+                "on first **Run pipeline**, or click **Prefetch** below "
+                "to do it now (~1 GB download → ~3 GB unzipped)."
+            )
+            if st.button("⬇  Prefetch FASTA", key="btn_prefetch_fa"):
+                try:
+                    with st.spinner(
+                        f"Downloading + indexing {genome} FASTA…"
+                    ):
+                        ensure_genome_fasta(genome)
+                    st.success(f"{genome} FASTA cached at `{bundled_fa}`")
+                    st.rerun()
+                except RuntimeError as exc:
+                    st.error(str(exc))
 
     # ── Entropy mode ──
     st.markdown("### 03 · entropy mode")

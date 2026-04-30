@@ -33,9 +33,14 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 
+# Browser tab favicon: prefer the bundled PNG; fall back to a glyph if
+# it's not on disk (e.g. user deleted the asset).
+_ICON_PATH = _THIS / "Shannonpore_icon.png"
+_PAGE_ICON: object = str(_ICON_PATH) if _ICON_PATH.exists() else "◉"
+
 st.set_page_config(
     page_title=f"shannonpore v{__version__}",
-    page_icon="◉",
+    page_icon=_PAGE_ICON,
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
@@ -56,6 +61,8 @@ def _sidebar() -> None:
     state = get_state()
     with st.sidebar:
         # ── Branding ────────────────────────────────────────────────
+        if _ICON_PATH.exists():
+            st.image(str(_ICON_PATH), width=120)
         st.markdown(
             f"""
             <div style="padding:0.4rem 0 0.6rem;">

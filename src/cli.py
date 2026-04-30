@@ -42,6 +42,7 @@ from src.config import (
     RESULTS_DIR,
     assets_for,
     ensure_dirs,
+    ensure_genome_fasta,
     ensure_genome_gtf,
 )
 from src.constants import (
@@ -58,12 +59,25 @@ logger = logging.getLogger("shannonpore.cli")
 # ─────────────────────────── helpers ──────────────────────────────────────
 
 def _resolve_fasta(genome: str, custom: str | None) -> Path:
+    """Return a usable FASTA path. If --fasta wasn't supplied, fall back
+    to the bundled per-genome FASTA — auto-downloading + indexing it on
+    first use. ~1 GB download + ~3 GB unzip; only triggered when needed."""
     if custom:
         p = Path(custom).expanduser().resolve()
         if not p.exists():
             raise SystemExit(f"FASTA not found: {p}")
         return p
-    return assets_for(genome).fasta
+    bundled = assets_for(genome).fasta
+    if bundled.exists() and Path(str(bundled) + ".fai").exists():
+        return bundled
+    try:
+        return ensure_genome_fasta(genome, progress_cb=_print_progress_pct)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+
+
+def _print_progress_pct(frac: float, msg: str) -> None:
+    print(f"  [{frac * 100:5.1f}%] {msg}", flush=True)
 
 
 def _setup_logging(verbose: int) -> None:
@@ -388,6 +402,35 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+# ─────────────────────────── prefetch ─────────────────────────────────────
+
+def cmd_prefetch(args: argparse.Namespace) -> int:
+    """Pre-download bundled reference assets for one or both genomes.
+
+    Useful as a one-time setup step on a fresh machine so the GUI's
+    first-run latency is bounded — and so cluster jobs don't all race to
+    download the same FASTA. Idempotent: skips assets already on disk.
+    """
+    genomes = args.genome or ["hg38", "mm10"]
+    for g in genomes:
+        print(f"[prefetch] {g} GTF…", flush=True)
+        try:
+            gtf = ensure_genome_gtf(g, progress_cb=_print_progress_pct)
+            print(f"[OK] {g} GTF: {gtf}")
+        except RuntimeError as exc:
+            print(f"[FAIL] {g} GTF: {exc}", flush=True)
+            return 1
+
+        print(f"[prefetch] {g} FASTA (this can take several minutes)…", flush=True)
+        try:
+            fa = ensure_genome_fasta(g, progress_cb=_print_progress_pct)
+            print(f"[OK] {g} FASTA: {fa}")
+        except RuntimeError as exc:
+            print(f"[FAIL] {g} FASTA: {exc}", flush=True)
+            return 1
+    return 0
+
+
 # ─────────────────────────── guide / examples ────────────────────────────
 
 def cmd_guide(args: argparse.Namespace) -> int:
@@ -477,21 +520,19 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     ensure_dirs()  # creates REFERENCE_DIR if missing
     check("REFERENCE_DIR", "exists", REFERENCE_DIR.exists(), str(REFERENCE_DIR))
 
-    project_root = Path(__file__).resolve().parent.parent
-    setup_script = project_root / "scripts" / "setup_references.sh"
     fix_hint = (
-        f"download via: bash {setup_script}"
-        if setup_script.exists()
-        else "download FASTAs into REFERENCE_DIR"
+        "auto-fetched on first GUI run, or pre-fetch with "
+        "`shannonpore prefetch <genome>`"
     )
     for genome, status in reference_status().items():
         all_good = all(status.values())
         detail = (
             "fasta + .fai + GTF present"
             if all_good
-            else f"not downloaded — {fix_hint}"
+            else f"not yet cached — {fix_hint}"
         )
-        # FASTA download is opt-in; missing it is "advise", not "must".
+        # Reference assets are lazy-downloaded on demand; missing is
+        # "advise", never blocking.
         check(
             f"refs:{genome}", "fasta+fai+gtf", all_good, detail,
             severity="advise",
@@ -863,6 +904,23 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_doc.add_argument("-v", "--verbose", action="count", default=0)
     p_doc.set_defaults(func=cmd_doctor)
+
+    # prefetch ----------------------------------------------------------------
+    p_pre = sub.add_parser(
+        "prefetch",
+        help="Pre-download bundled FASTA + GTF for one or both genomes.",
+        description=(
+            "Pre-fetch reference assets so the first GUI run doesn't spend "
+            "minutes downloading. Without arguments, fetches both hg38 and "
+            "mm10. Idempotent — skips assets already on disk."
+        ),
+    )
+    p_pre.add_argument(
+        "genome", nargs="*", choices=["hg38", "mm10"], default=None,
+        help="One or more genomes to prefetch (default: both).",
+    )
+    p_pre.add_argument("-v", "--verbose", action="count", default=0)
+    p_pre.set_defaults(func=cmd_prefetch)
 
     # guide -------------------------------------------------------------------
     p_g = sub.add_parser(

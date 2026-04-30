@@ -136,8 +136,8 @@ def main() -> None:
     st.markdown("# Nanopore methylation entropy")
     st.markdown(
         '<div class="caption">Per-CpG entropy (ME), '
-        'mean methylation level (MML), and coverage from modkit-extracted '
-        'nanopore reads — three modes for handling 5hmC.</div>',
+        "mean methylation level (MML), and coverage from modkit-extracted "
+        "nanopore reads — three modes for handling 5hmC.</div>",
         unsafe_allow_html=True,
     )
 

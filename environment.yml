@@ -12,10 +12,9 @@ dependencies:
   - python=3.10.12
   - pip=24.2
 
-  # External binaries
-  # Note: the bioconda package is `ont-modkit` (the on-disk binary is still
-  # `modkit`). v3 pinned `modkit=0.6.0` which doesn't exist as a recipe and
-  # broke the env-create step.
+  # External binaries.
+  # The bioconda recipe is `ont-modkit` (the installed binary is still
+  # called `modkit` on PATH).
   - ont-modkit=0.6.0
   - samtools=1.21
   - htslib=1.21
@@ -28,24 +27,24 @@ dependencies:
   # Python packages installable from conda-forge (faster than pip)
   - numpy=1.26.4
   - pandas=2.2.3
-  - scipy=1.11.4
-  - matplotlib=3.8.4
+  - scipy=1.15.3
+  - matplotlib=3.10.9
   - seaborn=0.13.2
-  - duckdb=1.4.3
-  - tqdm=4.67.1
-  - pyfaidx=0.8.1.2
-  - pysam=0.22.1          # selftest + tests/fixtures/build_tiny_bam.py
+  - duckdb=1.5.2
+  - tqdm=4.67.3
+  - pyfaidx=0.9.0.4
+  - pysam=0.24.0          # selftest + tests/fixtures/build_tiny_bam.py
 
   # GUI + CLI runtime — all available on conda-forge so we install them
   # via conda, not pip. (Earlier versions used a `pip:` block; that
   # block silently leaked installs into ~/.local on systems where
   # PYTHONUSERBASE was set, which then shadowed the conda env.)
-  - streamlit=1.51.0
-  - plotly=6.2.0
+  - streamlit=1.57.0
+  - plotly=6.7.0
 
   # Dev / QA
   - pytest=8.3.3
   - pytest-cov=5.0.0
-  - ruff=0.7.4
+  - ruff=0.15.12
   - black=24.10.0
-  - mypy=1.13.0
+  - mypy=1.20.2

@@ -27,6 +27,8 @@ from src.constants import (
     ENTROPY_MODE_LABELS,
     ENTROPY_MODE_TERNARY,
     ENTROPY_MODES,
+    PALETTE_CONTROL,
+    PALETTE_TARGET,
 )
 from src.help_text import (
     GUI_GETTING_STARTED,
@@ -59,13 +61,17 @@ INPUT_KIND_LABELS = {
 
 
 def _sample_inputs(
-    spec: SampleSpec, *, key_prefix: str, default_label: str,
+    spec: SampleSpec,
+    *,
+    key_prefix: str,
+    default_label: str,
 ) -> SampleSpec:
     """Render inputs for one sample. Returns an updated SampleSpec."""
     import streamlit as st
 
     label = st.text_input(
-        "label", value=spec.label or default_label,
+        "label",
+        value=spec.label or default_label,
         key=f"{key_prefix}_label",
     )
 
@@ -103,16 +109,17 @@ def _sample_inputs(
             placeholder="/path/to/bams_dir",
             key=f"{key_prefix}_folder",
             help="All `*.bam` files found recursively will be merged, "
-                 "sorted and indexed before modkit extract runs.",
+            "sorted and indexed before modkit extract runs.",
         )
         new.bam_folder = Path(folder) if folder else None
         if folder and Path(folder).is_dir():
             try:
                 from src.pipelines.bam_utils import find_bams
+
                 found = find_bams(folder)
                 st.markdown(
                     f'<div class="caption">found {len(found)} BAMs · '
-                    f'will be merged → sorted → indexed</div>',
+                    f"will be merged → sorted → indexed</div>",
                     unsafe_allow_html=True,
                 )
             except OSError:
@@ -156,6 +163,7 @@ def _run(out_dir: Path) -> dict:
     target_result = None
     control_result = None
     with StreamlitProgress("shannonpore pipeline") as bar:
+
         def progress_and_bar(msg: str) -> None:
             progress(msg)
             bar.status(msg)
@@ -184,9 +192,7 @@ def _run(out_dir: Path) -> dict:
         "control": _summarize(control_result) if control_result else None,
         "progress": progress_lines,
     }
-    Path(out_dir, "run_summary.json").write_text(
-        json.dumps(summary, default=str, indent=2)
-    )
+    Path(out_dir, "run_summary.json").write_text(json.dumps(summary, default=str, indent=2))
 
     update_section(
         "file_prep",
@@ -208,8 +214,7 @@ def _summarize(result) -> dict | None:
         "me_bedgraph": str(result.me_bedgraph),
         "mml_bedgraph": str(result.mml_bedgraph),
         "coverage_bedgraph": str(result.coverage_bedgraph),
-        "mhml_bedgraph": (str(result.mhml_bedgraph)
-                          if result.mhml_bedgraph else None),
+        "mhml_bedgraph": (str(result.mhml_bedgraph) if result.mhml_bedgraph else None),
     }
 
 
@@ -232,7 +237,7 @@ def _autoload_graph_prep(target_result, control_result, fp) -> None:
 
     target_track = TrackPlot(
         name=target_result.label,
-        color="#ff7f0e",
+        color=PALETTE_TARGET,
         mml_path=target_result.mml_bedgraph,
         me_path=target_result.me_bedgraph,
         coverage_path=target_result.coverage_bedgraph,
@@ -243,7 +248,7 @@ def _autoload_graph_prep(target_result, control_result, fp) -> None:
     if control_result is not None:
         control_track = TrackPlot(
             name=control_result.label,
-            color="#1f77b4",
+            color=PALETTE_CONTROL,
             mml_path=control_result.mml_bedgraph,
             me_path=control_result.me_bedgraph,
             coverage_path=control_result.coverage_bedgraph,
@@ -255,7 +260,7 @@ def _autoload_graph_prep(target_result, control_result, fp) -> None:
         # Plotting tab still shows something sensible (user can swap).
         copied = TrackPlot(
             name=target_result.label,
-            color="#1f77b4",
+            color=PALETTE_CONTROL,
             mml_path=target_result.mml_bedgraph,
             me_path=target_result.me_bedgraph,
             coverage_path=target_result.coverage_bedgraph,
@@ -317,35 +322,41 @@ def render() -> None:
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(
-                '<div style="font-family:\'IBM Plex Mono\',monospace;'
-                'font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;'
+                "<div style=\"font-family:'IBM Plex Mono',monospace;"
+                "font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;"
                 'color:#0f4c75;margin-bottom:0.3rem;">control</div>',
                 unsafe_allow_html=True,
             )
             new_control = _sample_inputs(
-                fp.control, key_prefix="ctrl", default_label="control",
+                fp.control,
+                key_prefix="ctrl",
+                default_label="control",
             )
             update_section("file_prep", control=new_control)
         with c2:
             st.markdown(
-                '<div style="font-family:\'IBM Plex Mono\',monospace;'
-                'font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;'
+                "<div style=\"font-family:'IBM Plex Mono',monospace;"
+                "font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;"
                 'color:#b86b3a;margin-bottom:0.3rem;">target</div>',
                 unsafe_allow_html=True,
             )
             new_target = _sample_inputs(
-                fp.target, key_prefix="tgt", default_label="target",
+                fp.target,
+                key_prefix="tgt",
+                default_label="target",
             )
             update_section("file_prep", target=new_target)
     else:
         st.markdown(
-            '<div style="font-family:\'IBM Plex Mono\',monospace;'
-            'font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;'
+            "<div style=\"font-family:'IBM Plex Mono',monospace;"
+            "font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;"
             'color:#7a7a78;margin-bottom:0.3rem;">single sample</div>',
             unsafe_allow_html=True,
         )
         new_target = _sample_inputs(
-            fp.target, key_prefix="single", default_label="sample",
+            fp.target,
+            key_prefix="single",
+            default_label="sample",
         )
         update_section("file_prep", target=new_target)
 
@@ -359,7 +370,8 @@ def render() -> None:
     col_g, col_f = st.columns([1, 3])
     with col_g:
         genome = st.selectbox(
-            "genome", options=list(GENOMES),
+            "genome",
+            options=list(GENOMES),
             index=list(GENOMES).index(fp.genome),
         )
     with col_f:
@@ -379,9 +391,7 @@ def render() -> None:
         bundled_fa = assets_for(genome).fasta
         bundled_fai = Path(str(bundled_fa) + ".fai")
         if bundled_fa.exists() and bundled_fai.exists():
-            st.caption(
-                f"✅ {genome} FASTA + .fai cached at `{bundled_fa}`"
-            )
+            st.caption(f"✅ {genome} FASTA + .fai cached at `{bundled_fa}`")
         else:
             st.warning(
                 f"{genome} FASTA not yet on disk. It will auto-download "
@@ -390,9 +400,7 @@ def render() -> None:
             )
             if st.button("⬇  Prefetch FASTA", key="btn_prefetch_fa"):
                 try:
-                    with st.spinner(
-                        f"Downloading + indexing {genome} FASTA…"
-                    ):
+                    with st.spinner(f"Downloading + indexing {genome} FASTA…"):
                         ensure_genome_fasta(genome)
                     st.success(f"{genome} FASTA cached at `{bundled_fa}`")
                     st.rerun()
@@ -402,10 +410,7 @@ def render() -> None:
     # ── Entropy mode ──
     st.markdown("### 03 · entropy mode")
     _section_caption(SEC_FP_ENTROPY_MODE)
-    mode_idx = (
-        ENTROPY_MODES.index(fp.entropy_mode)
-        if fp.entropy_mode in ENTROPY_MODES else 0
-    )
+    mode_idx = ENTROPY_MODES.index(fp.entropy_mode) if fp.entropy_mode in ENTROPY_MODES else 0
     mode = st.radio(
         "5hmC handling",
         options=ENTROPY_MODES,
@@ -425,30 +430,44 @@ def render() -> None:
     with col_k:
         cpgs = st.number_input(
             "CpGs per bin (k)",
-            min_value=2, max_value=8, value=int(fp.cpgs_per_bin), step=1,
+            min_value=2,
+            max_value=8,
+            value=int(fp.cpgs_per_bin),
+            step=1,
             help=GUI_HELP_K,
         )
     with col_cov:
         min_cov = st.number_input(
-            "min coverage", min_value=1, max_value=500,
-            value=int(fp.min_coverage), step=1,
+            "min coverage",
+            min_value=1,
+            max_value=500,
+            value=int(fp.min_coverage),
+            step=1,
             help=GUI_HELP_MIN_COV,
         )
     with col_t:
         threads = st.slider(
-            "threads", 1, 64, fp.modkit_threads,
+            "threads",
+            1,
+            64,
+            fp.modkit_threads,
             help="Worker processes for the per-chromosome stage.",
         )
     with col_th:
         thresh = st.slider(
-            "methyl threshold", 0.0, 1.0,
-            float(fp.methyl_threshold), step=0.05,
+            "methyl threshold",
+            0.0,
+            1.0,
+            float(fp.methyl_threshold),
+            step=0.05,
             help=GUI_HELP_METHYL_THRESHOLD,
         )
     update_section(
         "file_prep",
-        entropy_mode=mode, cpgs_per_bin=int(cpgs),
-        min_coverage=int(min_cov), modkit_threads=threads,
+        entropy_mode=mode,
+        cpgs_per_bin=int(cpgs),
+        min_coverage=int(min_cov),
+        modkit_threads=threads,
         methyl_threshold=float(thresh),
     )
 
@@ -475,8 +494,7 @@ def render() -> None:
     st.markdown("---")
     col_run, col_status = st.columns([1, 3])
     with col_run:
-        run_clicked = st.button("RUN PIPELINE", type="primary",
-                                use_container_width=True)
+        run_clicked = st.button("RUN PIPELINE", type="primary", use_container_width=True)
     with col_status:
         if fp.last_run_id:
             st.markdown(
@@ -491,8 +509,7 @@ def render() -> None:
         summary = _run(Path(out_dir))
         if summary:
             st.success(
-                "pipeline complete · output paths auto-loaded into the "
-                "Graph Preparation tab"
+                "pipeline complete · output paths auto-loaded into the " "Graph Preparation tab"
             )
             with st.expander("run summary (JSON)"):
                 st.json(summary)

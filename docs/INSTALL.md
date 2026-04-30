@@ -21,32 +21,37 @@ in any shell — `install.sh` symlinks them into `~/.local/bin/`. You
 
 ## Reference data (multi-GiB)
 
-The default `bash install.sh` does **not** download reference FASTAs —
-they're multi-GiB and hang most installs. The tool needs a populated
-`REFERENCE_DIR` only when you point it at real BAM/TSV data; `selftest`
-ships its own synthetic FASTA so you can verify the install end-to-end
-without fetching anything multi-GiB.
+**By default, `bash install.sh` downloads both hg38 and mm10 FASTAs
+(~6 GiB total, 20–60 min depending on link speed).** The tool also
+provides a fully lazy fallback: any GTF or FASTA missing on disk is
+auto-downloaded from UCSC on first use (~30–40 MiB GTF download / ~1 GiB
+FASTA download → ~3 GiB unzipped + `samtools faidx`), so you can skip
+the install-time fetch and have it pay-as-you-go later.
 
-`REFERENCE_DIR` defaults to `<repo>/reference_files/`. You only need
-to set `SHANNONPORE_REF_DIR` if you want it to point somewhere else
-(e.g. a shared lab volume). Three ways to populate it:
+`REFERENCE_DIR` defaults to `<repo>/reference_files/`. Set
+`SHANNONPORE_REF_DIR` only if you want a shared location (e.g. a lab
+volume). Four ways to manage references:
 
 ```bash
-# 1. Have install.sh fetch into the default location
-SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh   # ~3.2 GiB
-SHANNONPORE_DOWNLOAD_REFERENCES=mm10 bash install.sh   # ~2.8 GiB
-SHANNONPORE_DOWNLOAD_REFERENCES=1    bash install.sh   # both
-
-# 2. Run install.sh now (skips refs), fetch later
+# 1. Default — install.sh downloads both genomes automatically
 bash install.sh
-bash scripts/setup_references.sh --genome hg38
 
-# 3. Use FASTAs you already have at a different path
-SHANNONPORE_REF_DIR=/path/to/your/refs bash install.sh
+# 2. Skip the install-time fetch, let the tool auto-download lazily
+SHANNONPORE_SKIP_REFERENCES=1 bash install.sh
+
+# 3. Pin to a single genome at install time
+SHANNONPORE_DOWNLOAD_REFERENCES=hg38 bash install.sh
+SHANNONPORE_DOWNLOAD_REFERENCES=mm10 bash install.sh
+
+# 4. Pre-fetch later, after install
+bash scripts/setup_references.sh --genome hg38
+shannonpore prefetch hg38 mm10        # CLI equivalent (FASTA + GTF + .fai)
 ```
 
 You can also bypass `REFERENCE_DIR` entirely and pass `--fasta` to the
-CLI or use the "custom FASTA" field in the GUI per invocation.
+CLI or use the "custom FASTA" field in the GUI per invocation. `selftest`
+ships its own synthetic FASTA, so you can verify the install end-to-end
+without fetching anything multi-GiB first.
 
 ## What `install.sh` does
 
@@ -154,7 +159,7 @@ shell and tab-complete on `shannonpore <Tab>`. Completes:
 - subcommands (`extract`, `entropy`, `plot`, `run`, `doctor`, `selftest`)
 - option flags per subcommand
 - mode enums (`true_mc`, `bisulfite`, `ternary`)
-- genome enums (`hg38`, `hg19`, `mm10`)
+- genome enums (`hg38`, `mm10`)
 - `--bam`, `--fasta`, `--gtf`, etc. → file completions
 - `--out-dir`, `--work-dir` → directory completions
 

@@ -54,12 +54,17 @@ def run_modkit_extract_minimal(
         raise RuntimeError(str(ok))
 
     cmd = [
-        "modkit", "extract", "full",
-        "--reference", reference_fasta,
+        "modkit",
+        "extract",
+        "full",
+        "--reference",
+        reference_fasta,
         "--cpg",
-        "--threads", str(int(threads)),
+        "--threads",
+        str(int(threads)),
         "--force",
-        "--log-filepath", log_filepath,
+        "--log-filepath",
+        log_filepath,
         bam_path,
         out_tsv_path,
     ]
@@ -117,9 +122,7 @@ def run_modkit_extract_minimal(
             )
 
         if not os.path.exists(out_tsv_path) or os.path.getsize(out_tsv_path) == 0:
-            raise RuntimeError(
-                f"modkit finished but TSV output missing or empty: {out_tsv_path}"
-            )
+            raise RuntimeError(f"modkit finished but TSV output missing or empty: {out_tsv_path}")
     finally:
         # Terminate cleanly and reap the child so we never leak a zombie
         # (Streamlit sessions are long-lived and accumulate them otherwise).

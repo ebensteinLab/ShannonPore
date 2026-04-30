@@ -40,6 +40,7 @@ logger = logging.getLogger(__name__)
 
 # ─── GTF resolution ───────────────────────────────────────────────────────
 
+
 def _resolve_gtf(gp, *, allow_download: bool = True) -> Path | None:
     """Return the GTF for the chosen genome.
 
@@ -67,8 +68,7 @@ def _resolve_gtf(gp, *, allow_download: bool = True) -> Path | None:
         return None
 
     with st.spinner(
-        f"First-time setup: downloading {gp.genome} RefSeq GTF "
-        f"(~30–40 MB) from UCSC…"
+        f"First-time setup: downloading {gp.genome} RefSeq GTF " f"(~30–40 MB) from UCSC…"
     ):
         try:
             path = ensure_genome_gtf(gp.genome)
@@ -83,35 +83,43 @@ def _resolve_gtf(gp, *, allow_download: bool = True) -> Path | None:
 
 # ─── Sample input panel ───────────────────────────────────────────────────
 
+
 def _track_inputs(state, side: str) -> None:
     import streamlit as st
 
     cur = getattr(state.graph_prep, side)
     st.markdown(
-        f'<div style="font-family:\'IBM Plex Mono\',monospace;'
-        f'font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;'
+        f"<div style=\"font-family:'IBM Plex Mono',monospace;"
+        f"font-size:0.78rem;text-transform:uppercase;letter-spacing:0.06em;"
         f'color:#7a7a78;margin-bottom:0.4rem;">{side}</div>',
         unsafe_allow_html=True,
     )
     name = st.text_input("label", value=cur.name, key=f"{side}_name")
     color = st.color_picker("colour", value=cur.color, key=f"{side}_color")
     mml = st.text_input(
-        "MML bedgraph", value=str(cur.mml_path or ""), key=f"{side}_mml",
+        "MML bedgraph",
+        value=str(cur.mml_path or ""),
+        key=f"{side}_mml",
         placeholder="/path/to/sample.mml.bedgraph",
     )
     me = st.text_input(
-        "ME bedgraph", value=str(cur.me_path or ""), key=f"{side}_me",
+        "ME bedgraph",
+        value=str(cur.me_path or ""),
+        key=f"{side}_me",
         placeholder="/path/to/sample.me.bedgraph",
     )
     cov = st.text_input(
-        "coverage bedgraph", value=str(cur.coverage_path or ""),
+        "coverage bedgraph",
+        value=str(cur.coverage_path or ""),
         key=f"{side}_cov",
         placeholder="/path/to/sample.coverage.bedgraph",
     )
 
     from src.state import TrackPlot
+
     new_track = TrackPlot(
-        name=name or cur.name, color=color or cur.color,
+        name=name or cur.name,
+        color=color or cur.color,
         mml_path=Path(mml) if mml else None,
         me_path=Path(me) if me else None,
         coverage_path=Path(cov) if cov else None,
@@ -121,11 +129,16 @@ def _track_inputs(state, side: str) -> None:
 
 # ─── Loaders ──────────────────────────────────────────────────────────────
 
+
 def _paired_paths_ready(gp) -> bool:
-    return all([
-        gp.control.mml_path, gp.control.me_path,
-        gp.target.mml_path, gp.target.me_path,
-    ])
+    return all(
+        [
+            gp.control.mml_path,
+            gp.control.me_path,
+            gp.target.mml_path,
+            gp.target.me_path,
+        ]
+    )
 
 
 @show_error(user_message="Could not load bedgraphs.")
@@ -141,6 +154,7 @@ def _load_paired(gp):
 
 
 # ─── Renderers (decorated with show_error so traceback shows on screen) ──
+
 
 @show_error(user_message="ME / MML scatter failed.")
 def _render_me_mml_scatter(gp, out_path: Path, log_scale: bool):
@@ -174,8 +188,16 @@ def _render_triple_landscape(gp, out_path: Path, log_scale: bool):
 
 @show_error(user_message="Paired landscape plot failed.")
 def _render_paired_landscape(
-    gp, out_path: Path, *,
-    fa_dim, fa_op, fa_val, fb_dim, fb_op, fb_val, max_lines,
+    gp,
+    out_path: Path,
+    *,
+    fa_dim,
+    fa_op,
+    fa_val,
+    fb_dim,
+    fb_op,
+    fb_val,
+    max_lines,
 ):
     df = _load_paired(gp)
     if df is None or df.empty:
@@ -186,8 +208,12 @@ def _render_paired_landscape(
         label_b=gp.target.name or "Target",
         color_a=gp.control.color,
         color_b=gp.target.color,
-        filter_a_dim=fa_dim, filter_a_op=fa_op, filter_a_value=fa_val,
-        filter_b_dim=fb_dim, filter_b_op=fb_op, filter_b_value=fb_val,
+        filter_a_dim=fa_dim,
+        filter_a_op=fa_op,
+        filter_a_value=fa_val,
+        filter_b_dim=fb_dim,
+        filter_b_op=fb_op,
+        filter_b_value=fb_val,
         max_lines=max_lines,
         out_path=out_path,
     )
@@ -198,14 +224,19 @@ def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
     if not _paired_paths_ready(gp):
         return None
     return plot_region_tracks(
-        chrom=gp.region_chrom, start=int(gp.region_start), end=int(gp.region_end),
-        control_mml=gp.control.mml_path, target_mml=gp.target.mml_path,
-        control_me=gp.control.me_path, target_me=gp.target.me_path,
+        chrom=gp.region_chrom,
+        start=int(gp.region_start),
+        end=int(gp.region_end),
+        control_mml=gp.control.mml_path,
+        target_mml=gp.target.mml_path,
+        control_me=gp.control.me_path,
+        target_me=gp.target.me_path,
         control_coverage=gp.control.coverage_path,
         target_coverage=gp.target.coverage_path,
         label_a=gp.control.name or "Control",
         label_b=gp.target.name or "Target",
-        color_a=gp.control.color, color_b=gp.target.color,
+        color_a=gp.control.color,
+        color_b=gp.target.color,
         gtf_path=_resolve_gtf(gp),
         smooth_win=smooth_win,
         pad_bp=pad_bp,
@@ -214,6 +245,7 @@ def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
 
 
 # ─── UI helper: surface where a plot was saved ────────────────────────────
+
 
 def _show_saved_path(out: Path) -> None:
     """Display the on-disk path of a just-rendered plot so users can
@@ -250,6 +282,7 @@ Preparation** tab. Sample labels and colours flow through to every plot.
 
 # ─── Main render() ────────────────────────────────────────────────────────
 
+
 def render() -> None:
     import streamlit as st
 
@@ -268,10 +301,7 @@ def render() -> None:
     ):
         st.markdown(_TAB_HELP)
         if not paths_loaded:
-            st.info(
-                "💡 Run the **File Preparation** tab first — paths land "
-                "here automatically."
-            )
+            st.info("💡 Run the **File Preparation** tab first — paths land " "here automatically.")
 
     def _section_caption(text: str) -> None:
         st.markdown(
@@ -301,7 +331,9 @@ def render() -> None:
         help="Off = linear count colour scale; on = log10 count.",
     )
     if st.button(
-        "RENDER ME / MML SCATTER", type="primary", use_container_width=True,
+        "RENDER ME / MML SCATTER",
+        type="primary",
+        use_container_width=True,
         key="btn_me_mml_scatter",
     ):
         if not paths_loaded:
@@ -328,7 +360,9 @@ def render() -> None:
         key="arch_log",
     )
     if st.button(
-        "RENDER ARCH LANDSCAPE", type="primary", use_container_width=True,
+        "RENDER ARCH LANDSCAPE",
+        type="primary",
+        use_container_width=True,
         key="btn_arch",
     ):
         if not paths_loaded:
@@ -358,15 +392,22 @@ def render() -> None:
     fa1, fa2, fa3 = st.columns([2, 1, 2])
     with fa1:
         fa_dim = st.selectbox(
-            "dimension", options=dim_options, index=2,  # |dMML|
+            "dimension",
+            options=dim_options,
+            index=2,  # |dMML|
             key="pl_fa_dim",
         )
     with fa2:
         fa_op = st.selectbox("op", options=op_options, index=0, key="pl_fa_op")
     with fa3:
         fa_val = st.number_input(
-            "threshold", min_value=0.0, max_value=1.0,
-            value=0.10, step=0.01, format="%.2f", key="pl_fa_val",
+            "threshold",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.10,
+            step=0.01,
+            format="%.2f",
+            key="pl_fa_val",
         )
 
     # Filter B — defaults to "entropy-shifted" (|dME| > 0.4)
@@ -374,40 +415,58 @@ def render() -> None:
     fb1, fb2, fb3 = st.columns([2, 1, 2])
     with fb1:
         fb_dim = st.selectbox(
-            "dimension", options=dim_options, index=4,  # |dME|
+            "dimension",
+            options=dim_options,
+            index=4,  # |dME|
             key="pl_fb_dim",
         )
     with fb2:
         fb_op = st.selectbox("op", options=op_options, index=1, key="pl_fb_op")
     with fb3:
         fb_val = st.number_input(
-            "threshold", min_value=0.0, max_value=1.0,
-            value=0.40, step=0.01, format="%.2f", key="pl_fb_val",
+            "threshold",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.40,
+            step=0.01,
+            format="%.2f",
+            key="pl_fb_val",
         )
 
     max_lines = st.slider(
         "max paired lines drawn (subsample for speed)",
-        1_000, 100_000, 20_000, step=1_000, key="pl_max_lines",
+        1_000,
+        100_000,
+        20_000,
+        step=1_000,
+        key="pl_max_lines",
     )
 
     if st.button(
-        "RENDER PAIRED LANDSCAPE", type="primary", use_container_width=True,
+        "RENDER PAIRED LANDSCAPE",
+        type="primary",
+        use_container_width=True,
         key="btn_paired",
     ):
         if not paths_loaded:
             st.error("control and target MML + ME bedgraphs all required")
         else:
-            tag = "_".join([
-                f"{fa_dim}{fa_op}{fa_val:g}".replace("|", ""),
-                f"{fb_dim}{fb_op}{fb_val:g}".replace("|", ""),
-            ])
+            tag = "_".join(
+                [
+                    f"{fa_dim}{fa_op}{fa_val:g}".replace("|", ""),
+                    f"{fb_dim}{fb_op}{fb_val:g}".replace("|", ""),
+                ]
+            )
             out = out_dir / f"paired_{tag}.png"
             fig = _render_paired_landscape(
-                gp, out,
+                gp,
+                out,
                 fa_dim=None if fa_dim == "off" else fa_dim,
-                fa_op=fa_op, fa_val=float(fa_val),
+                fa_op=fa_op,
+                fa_val=float(fa_val),
                 fb_dim=None if fb_dim == "off" else fb_dim,
-                fb_op=fb_op, fb_val=float(fb_val),
+                fb_op=fb_op,
+                fb_val=float(fb_val),
                 max_lines=int(max_lines),
             )
             if fig is not None:
@@ -427,7 +486,9 @@ def render() -> None:
         default_genome = gp.genome or state.file_prep.genome or "hg38"
         genome_idx = list(GENOMES).index(default_genome) if default_genome in GENOMES else 0
         genome = st.selectbox(
-            "genome", options=list(GENOMES), index=genome_idx,
+            "genome",
+            options=list(GENOMES),
+            index=genome_idx,
             key="track_genome",
             help="Bundled GTF (refSeq) loads automatically for the chosen genome.",
         )
@@ -448,15 +509,23 @@ def render() -> None:
     # so `gp.genome` / `gp.gtf_path` reflect the just-saved values.
     gp = get_state().graph_prep
 
-    # Resolve GTF (downloads on first use). Surface state up-front so the
-    # user sees what's happening.
-    resolved_gtf = _resolve_gtf(gp)
+    # Resolve GTF without triggering a download — initial render must
+    # never block on network. The download fires only when the user
+    # clicks "Fetch GTF" or one of the action buttons (FIND / RENDER).
+    resolved_gtf = _resolve_gtf(gp, allow_download=False)
     if resolved_gtf is None:
-        st.warning(
-            "Could not resolve a GTF for this genome — gene panel and "
-            "gene-name search will be unavailable. Check internet "
-            "access, or set a custom GTF path above."
-        )
+        gtf_status_col, gtf_btn_col = st.columns([3, 1])
+        with gtf_status_col:
+            st.info(
+                f"{gp.genome} GTF not yet on disk — gene panel and gene-name "
+                "search will fetch it (~30–40 MB) on first use."
+            )
+        with gtf_btn_col:
+            st.write("")
+            if st.button("⬇ Fetch GTF", key="btn_fetch_gtf", use_container_width=True):
+                resolved_gtf = _resolve_gtf(gp, allow_download=True)
+                if resolved_gtf is not None:
+                    st.rerun()
     else:
         st.caption(f"GTF: `{resolved_gtf}`")
 
@@ -467,7 +536,8 @@ def render() -> None:
         with sg1:
             query = st.text_input(
                 "gene name (e.g. VHL, TP53, Bdnf) — exact or prefix",
-                value="", key="gene_search",
+                value="",
+                key="gene_search",
                 placeholder="type a gene symbol",
             )
         with sg2:
@@ -505,39 +575,58 @@ def render() -> None:
     cc, cs, ce = st.columns([2, 2, 2])
     with cc:
         chrom = st.text_input(
-            "chromosome", value=gp.region_chrom, placeholder="chr3",
+            "chromosome",
+            value=gp.region_chrom,
+            placeholder="chr3",
             key="track_chrom",
         )
     with cs:
         start = st.number_input(
-            "start", value=int(gp.region_start), min_value=0, step=1000,
+            "start",
+            value=int(gp.region_start),
+            min_value=0,
+            step=1000,
             key="track_start",
         )
     with ce:
         end = st.number_input(
-            "end", value=int(gp.region_end), min_value=0, step=1000,
+            "end",
+            value=int(gp.region_end),
+            min_value=0,
+            step=1000,
             key="track_end",
         )
     update_section(
         "graph_prep",
         region_chrom=chrom or "",
-        region_start=int(start), region_end=int(end),
+        region_start=int(start),
+        region_end=int(end),
     )
 
     sw, pw = st.columns(2)
     with sw:
         smooth_win = st.slider(
-            "signal smoothing (bins)", 1, 50, 5, key="track_smooth",
+            "signal smoothing (bins)",
+            1,
+            50,
+            5,
+            key="track_smooth",
             help="Width of the uniform filter applied to ME and MML signals.",
         )
     with pw:
         pad_bp = st.number_input(
-            "padding around region (bp)", min_value=0, max_value=100_000,
-            value=2000, step=500, key="track_pad",
+            "padding around region (bp)",
+            min_value=0,
+            max_value=100_000,
+            value=2000,
+            step=500,
+            key="track_pad",
         )
 
     if st.button(
-        "RENDER TRACK PLOT", type="primary", use_container_width=True,
+        "RENDER TRACK PLOT",
+        type="primary",
+        use_container_width=True,
         key="btn_tracks",
     ):
         if not chrom or end <= start:
@@ -551,7 +640,10 @@ def render() -> None:
             chrom_safe = re.sub(r"[^A-Za-z0-9._-]", "_", chrom)[:64] or "chrom"
             out = out_dir / f"tracks_{chrom_safe}_{int(start)}_{int(end)}.png"
             res = _render_tracks(
-                gp, out, smooth_win=int(smooth_win), pad_bp=int(pad_bp),
+                gp,
+                out,
+                smooth_win=int(smooth_win),
+                pad_bp=int(pad_bp),
             )
             if res and Path(res).exists():
                 st.image(str(res))

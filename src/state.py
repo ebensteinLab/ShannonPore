@@ -16,6 +16,8 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
+from src.constants import PALETTE_CONTROL, PALETTE_TARGET
+
 
 @dataclass
 class SampleSpec:
@@ -38,12 +40,8 @@ class FilePrepState:
                        two parallel sets of bedgraphs.
     """
 
-    target: SampleSpec = field(
-        default_factory=lambda: SampleSpec(label="target")
-    )
-    control: SampleSpec = field(
-        default_factory=lambda: SampleSpec(label="control")
-    )
+    target: SampleSpec = field(default_factory=lambda: SampleSpec(label="target"))
+    control: SampleSpec = field(default_factory=lambda: SampleSpec(label="control"))
     pair_mode: bool = False
     genome: str = "hg38"
     custom_fasta: Path | None = None
@@ -65,10 +63,14 @@ class FilePrepState:
 
 @dataclass
 class TrackPlot:
-    """One track-plot configuration."""
+    """One track-plot configuration.
+
+    The default ``color`` matches the control side of the new palette;
+    GraphPrepState's factory overrides target with PALETTE_TARGET.
+    """
 
     name: str = ""
-    color: str = "#1f77b4"
+    color: str = PALETTE_CONTROL
     mml_path: Path | None = None
     me_path: Path | None = None
     coverage_path: Path | None = None
@@ -78,8 +80,12 @@ class TrackPlot:
 class GraphPrepState:
     """Tab 2 — Graph Preparation."""
 
-    control: TrackPlot = field(default_factory=lambda: TrackPlot(name="Control", color="#2980b9"))
-    target: TrackPlot = field(default_factory=lambda: TrackPlot(name="Target", color="#e67e22"))
+    control: TrackPlot = field(
+        default_factory=lambda: TrackPlot(name="Control", color=PALETTE_CONTROL),
+    )
+    target: TrackPlot = field(
+        default_factory=lambda: TrackPlot(name="Target", color=PALETTE_TARGET),
+    )
     genome: str = "hg38"
     gtf_path: Path | None = None  # custom override; None ⇒ use bundled gtf for `genome`
     region_chrom: str = ""

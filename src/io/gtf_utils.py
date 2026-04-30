@@ -71,13 +71,15 @@ def load_genes_from_gtf(gtf_path: str) -> pd.DataFrame:
                 continue
             seen.add(key)
 
-            genes.append({
-                "chr": chrom,
-                "start": int(start_1based - 1),
-                "end": int(end_1based),
-                "target": str(target),
-                "strand": strand,
-            })
+            genes.append(
+                {
+                    "chr": chrom,
+                    "start": int(start_1based - 1),
+                    "end": int(end_1based),
+                    "target": str(target),
+                    "strand": strand,
+                }
+            )
 
     if not genes:
         return pd.DataFrame(columns=["chr", "start", "end", "target", "strand"])
@@ -93,8 +95,8 @@ class GeneStructure:
 
     chrom: str
     name: str
-    start: int   # 0-based inclusive
-    end: int     # 1-based exclusive (so end - start = length)
+    start: int  # 0-based inclusive
+    end: int  # 1-based exclusive (so end - start = length)
     strand: str
     exons: tuple[tuple[int, int], ...] = field(default_factory=tuple)
     promoter: tuple[int, int] | None = None  # (start, end), 0-based
@@ -115,7 +117,7 @@ def _load_gene_structures_cached(
     if not gtf_path:
         return ()
 
-    gene_meta: dict[str, dict] = {}      # name -> {chrom, start, end, strand}
+    gene_meta: dict[str, dict] = {}  # name -> {chrom, start, end, strand}
     gene_exons: dict[str, list[tuple[int, int]]] = {}
 
     with _open_text_maybe_gz(gtf_path) as f:
@@ -172,20 +174,29 @@ def _load_gene_structures_cached(
             else:
                 merged.append((s, e))
         prom = _promoter_for(
-            meta["start"], meta["end"], meta["strand"], promoter_upstream,
+            meta["start"],
+            meta["end"],
+            meta["strand"],
+            promoter_upstream,
         )
-        out.append(GeneStructure(
-            chrom=meta["chrom"], name=name,
-            start=meta["start"], end=meta["end"],
-            strand=meta["strand"],
-            exons=tuple(merged),
-            promoter=prom,
-        ))
+        out.append(
+            GeneStructure(
+                chrom=meta["chrom"],
+                name=name,
+                start=meta["start"],
+                end=meta["end"],
+                strand=meta["strand"],
+                exons=tuple(merged),
+                promoter=prom,
+            )
+        )
     return tuple(out)
 
 
 def load_gene_structures(
-    gtf_path: str, *, promoter_upstream: int = 1000,
+    gtf_path: str,
+    *,
+    promoter_upstream: int = 1000,
 ) -> tuple[GeneStructure, ...]:
     """Public wrapper that caches the parsed GTF in memory.
 
@@ -251,24 +262,17 @@ def get_gene_structures_for_region(
     if not structures:
         return []
     lo, hi = int(xlim[0]), int(xlim[1])
-    return [
-        g for g in structures
-        if g.chrom == chrom and g.start <= hi and g.end >= lo
-    ]
+    return [g for g in structures if g.chrom == chrom and g.start <= hi and g.end >= lo]
 
 
-def get_genes_for_region(
-    gene_df: pd.DataFrame, chrom: str, xlim: tuple[int, int]
-) -> pd.DataFrame:
+def get_genes_for_region(gene_df: pd.DataFrame, chrom: str, xlim: tuple[int, int]) -> pd.DataFrame:
     """Return genes whose intervals overlap `[xlim[0], xlim[1]]` on `chrom`."""
     cols = ["chr", "start", "end", "strand", "gene_name"]
     if gene_df is None or gene_df.empty:
         return pd.DataFrame(columns=cols)
 
     df = gene_df[
-        (gene_df["chr"] == chrom)
-        & (gene_df["start"] <= xlim[1])
-        & (gene_df["end"] >= xlim[0])
+        (gene_df["chr"] == chrom) & (gene_df["start"] <= xlim[1]) & (gene_df["end"] >= xlim[0])
     ].copy()
     if df.empty:
         return pd.DataFrame(columns=cols)

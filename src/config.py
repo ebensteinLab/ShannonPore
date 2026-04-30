@@ -54,13 +54,10 @@ class GenomeAssets:
 HG38 = GenomeAssets(
     name="hg38",
     fasta=REFERENCE_DIR / "hg38.fa",
-    fasta_url=(
-        "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz"
-    ),
+    fasta_url=("https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz"),
     gtf_gz=REFERENCE_DIR / "hg38.ncbiRefSeq.gtf.gz",
     gtf_url=(
-        "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/genes/"
-        "hg38.ncbiRefSeq.gtf.gz"
+        "https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/genes/" "hg38.ncbiRefSeq.gtf.gz"
     ),
     ccre_bb=REFERENCE_DIR / "hg38_encodeCcreCcreCombined.bb",
 )
@@ -68,13 +65,10 @@ HG38 = GenomeAssets(
 MM10 = GenomeAssets(
     name="mm10",
     fasta=REFERENCE_DIR / "mm10.fa",
-    fasta_url=(
-        "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/mm10.fa.gz"
-    ),
+    fasta_url=("https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/mm10.fa.gz"),
     gtf_gz=REFERENCE_DIR / "mm10.ncbiRefSeq.gtf.gz",
     gtf_url=(
-        "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/genes/"
-        "mm10.ncbiRefSeq.gtf.gz"
+        "https://hgdownload.soe.ucsc.edu/goldenPath/mm10/bigZips/genes/" "mm10.ncbiRefSeq.gtf.gz"
     ),
     ccre_bb=REFERENCE_DIR / "mm10_encodeCcreCombined.bb",
 )
@@ -88,9 +82,7 @@ INGEST_CHUNK_ROWS: int = 1_000_000
 
 def assets_for(genome: str) -> GenomeAssets:
     if genome not in GENOMES:
-        raise ValueError(
-            f"Unknown genome '{genome}'. Available: {sorted(GENOMES)}"
-        )
+        raise ValueError(f"Unknown genome '{genome}'. Available: {sorted(GENOMES)}")
     return GENOMES[genome]
 
 
@@ -106,7 +98,9 @@ def ensure_dirs() -> None:
     REFERENCE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-def _download_to(url: str, dest: Path, *, progress_cb: Callable[[float, str], None] | None = None) -> None:
+def _download_to(
+    url: str, dest: Path, *, progress_cb: Callable[[float, str], None] | None = None
+) -> None:
     """Stream-download ``url`` to ``dest`` atomically (writes to ``.partial``
     then renames). Reports fractional progress via ``progress_cb`` if given.
 
@@ -133,7 +127,9 @@ def _download_to(url: str, dest: Path, *, progress_cb: Callable[[float, str], No
     prior_default_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(60)
     try:
-        with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310 (trusted UCSC URL, see GenomeAssets.gtf_url)
+        with urllib.request.urlopen(
+            url, timeout=30
+        ) as resp:  # noqa: S310 (trusted UCSC URL, see GenomeAssets.gtf_url)
             total_bytes = int(resp.headers.get("Content-Length", "0") or 0)
             read = 0
             chunk = 1 << 16
@@ -145,7 +141,9 @@ def _download_to(url: str, dest: Path, *, progress_cb: Callable[[float, str], No
                     f.write(buf)
                     read += len(buf)
                     if progress_cb and total_bytes > 0:
-                        progress_cb(read / total_bytes, f"{read / 1e6:.1f} / {total_bytes / 1e6:.1f} MB")
+                        progress_cb(
+                            read / total_bytes, f"{read / 1e6:.1f} / {total_bytes / 1e6:.1f} MB"
+                        )
                     elif progress_cb:
                         progress_cb(0.0, f"{read / 1e6:.1f} MB")
         partial.rename(dest)
@@ -154,7 +152,9 @@ def _download_to(url: str, dest: Path, *, progress_cb: Callable[[float, str], No
 
 
 def ensure_genome_gtf(
-    genome: str, *, progress_cb: Callable[[float, str], None] | None = None,
+    genome: str,
+    *,
+    progress_cb: Callable[[float, str], None] | None = None,
 ) -> Path:
     """Return the path to the GTF for ``genome``, downloading it on first use.
 
@@ -192,7 +192,9 @@ def ensure_genome_gtf(
     return assets.gtf_gz
 
 
-def _gunzip_to(src_gz: Path, dest: Path, *, progress_cb: Callable[[float, str], None] | None = None) -> None:
+def _gunzip_to(
+    src_gz: Path, dest: Path, *, progress_cb: Callable[[float, str], None] | None = None
+) -> None:
     """Stream-decompress ``src_gz`` to ``dest`` atomically (writes to
     ``.partial`` then renames). Reports fractional progress via
     ``progress_cb`` if given."""
@@ -214,15 +216,18 @@ def _gunzip_to(src_gz: Path, dest: Path, *, progress_cb: Callable[[float, str], 
             if progress_cb and total_bytes > 0:
                 # Report compressed-bytes progress as a coarse indicator;
                 # uncompressed total is unknown without a second pass.
-                progress_cb(min(1.0, read / max(1, total_bytes * 3)),
-                            f"unzipped {read / 1e9:.2f} GB")
+                progress_cb(
+                    min(1.0, read / max(1, total_bytes * 3)), f"unzipped {read / 1e9:.2f} GB"
+                )
             elif progress_cb:
                 progress_cb(0.0, f"unzipped {read / 1e9:.2f} GB")
     partial.rename(dest)
 
 
 def ensure_genome_fasta(
-    genome: str, *, progress_cb: Callable[[float, str], None] | None = None,
+    genome: str,
+    *,
+    progress_cb: Callable[[float, str], None] | None = None,
 ) -> Path:
     """Return the path to the FASTA for ``genome``, downloading + indexing
     on first use.
@@ -298,7 +303,9 @@ def ensure_genome_fasta(
                 progress_cb(0.95, f"samtools faidx {genome}.fa…")
             subprocess.run(  # noqa: S603 (samtools is a vetted bioconda binary)
                 ["samtools", "faidx", str(fa)],
-                check=True, capture_output=True, text=True,
+                check=True,
+                capture_output=True,
+                text=True,
             )
             if progress_cb:
                 progress_cb(1.0, "done")

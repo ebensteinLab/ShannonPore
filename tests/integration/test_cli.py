@@ -17,14 +17,24 @@ from src import __version__
 V4_DIR = Path(__file__).resolve().parents[2]
 
 SUBCOMMANDS = (
-    "extract", "entropy", "plot", "run", "doctor", "guide", "examples", "selftest",
+    "extract",
+    "entropy",
+    "plot",
+    "run",
+    "doctor",
+    "guide",
+    "examples",
+    "selftest",
 )
 
 
 def _run(*args: str, expect_exit: int = 0, **kw) -> subprocess.CompletedProcess:
     proc = subprocess.run(
         [sys.executable, "-m", "src.cli", *args],
-        cwd=str(V4_DIR), capture_output=True, text=True, **kw,
+        cwd=str(V4_DIR),
+        capture_output=True,
+        text=True,
+        **kw,
     )
     if proc.returncode != expect_exit:
         raise AssertionError(
@@ -64,7 +74,11 @@ def test_entropy_modes_appear_in_help() -> None:
 @pytest.mark.integration
 def test_run_requires_input(tmp_path: Path) -> None:
     proc = _run(
-        "run", "--out-dir", str(tmp_path), "--genome", "hg38",
+        "run",
+        "--out-dir",
+        str(tmp_path),
+        "--genome",
+        "hg38",
         expect_exit=2,
     )
     assert any(x in proc.stderr for x in ("--bam", "--tsv", "--bam-folder"))
@@ -73,9 +87,14 @@ def test_run_requires_input(tmp_path: Path) -> None:
 @pytest.mark.integration
 def test_run_pair_requires_both_sides(tmp_path: Path) -> None:
     proc = _run(
-        "run", "--pair", "--out-dir", str(tmp_path),
-        "--control-bam", "/no/ctrl.bam",  # missing target
-        "--genome", "hg38",
+        "run",
+        "--pair",
+        "--out-dir",
+        str(tmp_path),
+        "--control-bam",
+        "/no/ctrl.bam",  # missing target
+        "--genome",
+        "hg38",
         expect_exit=2,
     )
     assert "control" in proc.stderr.lower() or "target" in proc.stderr.lower()
@@ -101,8 +120,11 @@ def test_examples_prints_recipes() -> None:
 @pytest.mark.integration
 def test_entropy_rejects_unknown_mode(tmp_path: Path) -> None:
     proc = _run(
-        "entropy", "/no/such.tsv", str(tmp_path / "out"),
-        "--mode", "not-a-mode",
+        "entropy",
+        "/no/such.tsv",
+        str(tmp_path / "out"),
+        "--mode",
+        "not-a-mode",
         expect_exit=2,
     )
     assert "invalid choice" in proc.stderr.lower()

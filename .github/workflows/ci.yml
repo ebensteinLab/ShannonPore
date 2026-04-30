@@ -50,10 +50,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Ensure dev tools (ruff, pytest, pytest-cov) are present
+      - name: Ensure dev tools (ruff, black, pytest, pytest-cov) are present
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "ruff==0.7.4" "pytest==8.3.3" "pytest-cov==5.0.0"
+          python -m pip install "ruff==0.15.12" "black==24.10.0" "pytest==8.3.3" "pytest-cov==5.0.0"
 
       - name: Install project (editable) into the active env
         run: |
@@ -61,6 +61,9 @@ jobs:
 
       - name: Lint with ruff
         run: ruff check src/ tests/ app.py
+
+      - name: Format check with black
+        run: black --check src/ tests/ app.py
 
       - name: Compile-check all Python sources
         run: |

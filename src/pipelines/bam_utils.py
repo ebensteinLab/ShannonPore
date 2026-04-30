@@ -48,8 +48,11 @@ def _run(cmd: list[str], *, stream: ProgressCB | None = None) -> None:
     """Run a subprocess, streaming stderr line-by-line through `stream`."""
     logger.info("$ %s", " ".join(cmd))
     proc = subprocess.Popen(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        bufsize=1, text=True,
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=1,
+        text=True,
     )
     assert proc.stdout is not None
     for line in proc.stdout:
@@ -109,8 +112,11 @@ def merge_sort_index_bams(
     if len(bams) > 1:
         advance(f"merging {len(bams)} BAMs")
         merge_cmd = [
-            samtools, "merge", "-f",
-            "-@", str(int(threads)),
+            samtools,
+            "merge",
+            "-f",
+            "-@",
+            str(int(threads)),
             str(merged),
             *[str(p) for p in bams],
         ]
@@ -121,9 +127,12 @@ def merge_sort_index_bams(
 
     advance("sorting")
     sort_cmd = [
-        samtools, "sort",
-        "-@", str(int(threads)),
-        "-o", str(out_bam),
+        samtools,
+        "sort",
+        "-@",
+        str(int(threads)),
+        "-o",
+        str(out_bam),
         str(sort_in),
     ]
     _run(sort_cmd, stream=progress_cb)
@@ -133,8 +142,7 @@ def merge_sort_index_bams(
             os.remove(merged)
 
     advance("indexing")
-    _run([samtools, "index", "-@", str(int(threads)), str(out_bam)],
-         stream=progress_cb)
+    _run([samtools, "index", "-@", str(int(threads)), str(out_bam)], stream=progress_cb)
 
     if not bai.exists():
         raise RuntimeError(f"samtools index produced no .bai for {out_bam}")

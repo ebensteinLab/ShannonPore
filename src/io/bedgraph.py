@@ -54,7 +54,7 @@ def smooth_bedgraph(
     df = df.rename(columns={"value": "score"})
     df["mid"] = (df["start"] + df["end"]) / 2
     df = df.sort_values("mid")
-    df["smoothed_score"] = df["score"].rolling(
-        window=window_size, center=True, min_periods=1
-    ).mean()
+    df["smoothed_score"] = (
+        df["score"].rolling(window=window_size, center=True, min_periods=1).mean()
+    )
     return df

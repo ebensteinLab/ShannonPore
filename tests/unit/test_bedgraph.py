@@ -34,10 +34,14 @@ def test_read_empty_file(tmp_path: Path) -> None:
 
 @pytest.mark.unit
 def test_write_round_trip(tmp_path: Path) -> None:
-    df = pd.DataFrame({
-        "chrom": ["chr1", "chr1"], "start": [0, 10], "end": [10, 20],
-        "metric": [0.5, 0.7],
-    })
+    df = pd.DataFrame(
+        {
+            "chrom": ["chr1", "chr1"],
+            "start": [0, 10],
+            "end": [10, 20],
+            "metric": [0.5, 0.7],
+        }
+    )
     out = tmp_path / "rt.bedgraph"
     write_bedgraph(df, "metric", out)
     rt = read_bedgraph(out)

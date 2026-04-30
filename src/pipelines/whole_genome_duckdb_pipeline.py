@@ -118,10 +118,13 @@ def stage_a_build_duckdb_table(
     con.execute(f"PRAGMA temp_directory='{tmp_dir}';")
     con.execute(f"PRAGMA threads={int(threads)};")
 
-    exists = con.execute(
-        "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
-        [table_name],
-    ).fetchone()[0] > 0
+    exists = (
+        con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+            [table_name],
+        ).fetchone()[0]
+        > 0
+    )
     if exists and not force:
         con.close()
         return
@@ -200,9 +203,7 @@ def compute_chrom_metrics_from_db(
     if os.path.exists(out_cov) and os.path.exists(out_mml) and os.path.exists(out_me):
         return f"[INFO] {chrom}: outputs exist, skipping"
 
-    cpg_positions = find_cpg_positions_chrom_chunked(
-        fasta_path, chrom, chunk_size=int(fasta_chunk)
-    )
+    cpg_positions = find_cpg_positions_chrom_chunked(fasta_path, chrom, chunk_size=int(fasta_chunk))
     k = int(cpgs_per_bin)
     if cpg_positions.size < k:
         for p in (out_cov, out_mml, out_me):
@@ -210,8 +211,8 @@ def compute_chrom_metrics_from_db(
         return f"[INFO] {chrom}: not enough CpGs, wrote empty outputs"
 
     n_full_bins = int(cpg_positions.size // k)
-    starts = cpg_positions[0: n_full_bins * k: k]
-    ends = cpg_positions[(k - 1): (n_full_bins * k): k] + 2
+    starts = cpg_positions[0 : n_full_bins * k : k]
+    ends = cpg_positions[(k - 1) : (n_full_bins * k) : k] + 2
 
     con = duckdb.connect(db_path, read_only=True)
     rows = con.execute(
@@ -268,7 +269,7 @@ def compute_chrom_metrics_from_db(
     status = status[order]
 
     uniq_mask = np.ones(keys.shape[0], dtype=bool)
-    uniq_mask[1:] = (keys[1:] != keys[:-1])
+    uniq_mask[1:] = keys[1:] != keys[:-1]
     uniq_idx = np.where(uniq_mask)[0]
     group_ends = np.r_[uniq_idx[1:], keys.shape[0]]
 
@@ -292,7 +293,7 @@ def compute_chrom_metrics_from_db(
     obs = obs[rb_order]
 
     rb_uniq = np.ones(rb_keys.shape[0], dtype=bool)
-    rb_uniq[1:] = (rb_keys[1:] != rb_keys[:-1])
+    rb_uniq[1:] = rb_keys[1:] != rb_keys[:-1]
     rb_idx = np.where(rb_uniq)[0]
     rb_end = np.r_[rb_idx[1:], rb_keys.shape[0]]
 
@@ -304,7 +305,7 @@ def compute_chrom_metrics_from_db(
         pattern[i] = bit[s0:s1].sum()
         obsmask[i] = obs[s0:s1].sum()
 
-    full = (obsmask == full_mask)
+    full = obsmask == full_mask
     if not np.any(full):
         return _write_zero_coverage("no full k-CpG patterns")
 
@@ -326,7 +327,7 @@ def compute_chrom_metrics_from_db(
     cnt_u = (uend - uidx).astype(np.int64)
 
     buniq = np.ones(bins_u.shape[0], dtype=bool)
-    buniq[1:] = (bins_u[1:] != bins_u[:-1])
+    buniq[1:] = bins_u[1:] != bins_u[:-1]
     bidx = np.where(buniq)[0]
     bend = np.r_[bidx[1:], bins_u.shape[0]]
 
@@ -413,7 +414,9 @@ def run_whole_genome_duckdb_only(
     ensure_dir(os.path.dirname(out_prefix))
     ensure_dir(work_dir)
 
-    db_path = os.path.abspath(duckdb_path) if duckdb_path else os.path.join(work_dir, "reads.duckdb")
+    db_path = (
+        os.path.abspath(duckdb_path) if duckdb_path else os.path.join(work_dir, "reads.duckdb")
+    )
     tmp_dir2 = os.path.abspath(tmp_dir) if tmp_dir else os.path.join(work_dir, "duckdb_tmp")
     out_chrom_dir = os.path.join(work_dir, "chrom_bedgraphs")
     ensure_dir(tmp_dir2)
@@ -450,8 +453,17 @@ def run_whole_genome_duckdb_only(
         progress_cb(f"[WG] Stage B: per-chrom metrics with {nproc} processes")
 
     worker_args = [
-        (chrom, fasta_path, db_path, duckdb_table, out_chrom_dir,
-         int(cpgs_per_bin), float(methyl_thresh), int(min_coverage), int(fasta_chunk))
+        (
+            chrom,
+            fasta_path,
+            db_path,
+            duckdb_table,
+            out_chrom_dir,
+            int(cpgs_per_bin),
+            float(methyl_thresh),
+            int(min_coverage),
+            int(fasta_chunk),
+        )
         for chrom in chrom_list
     ]
 

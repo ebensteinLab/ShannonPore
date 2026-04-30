@@ -44,9 +44,7 @@ def _factorize(values: np.ndarray) -> tuple[np.ndarray, int]:
     return inv.astype(np.int64, copy=False), int(uniques.shape[0])
 
 
-def _find_cpg_positions(
-    fasta_path: str, chrom: str, chunk_size: int = 10_000_000
-) -> np.ndarray:
+def _find_cpg_positions(fasta_path: str, chrom: str, chunk_size: int = 10_000_000) -> np.ndarray:
     genome = Fasta(fasta_path)
     chrom_len = len(genome[chrom])
     positions: list[int] = []
@@ -74,9 +72,7 @@ def _shannon(counts: np.ndarray) -> float:
 
 def _base3_powers(k: int) -> np.ndarray:
     if k not in _BASE3_CACHE:
-        _BASE3_CACHE[k] = np.array(
-            [3 ** (k - 1 - i) for i in range(k)], dtype=np.int64
-        )
+        _BASE3_CACHE[k] = np.array([3 ** (k - 1 - i) for i in range(k)], dtype=np.int64)
     return _BASE3_CACHE[k]
 
 
@@ -110,10 +106,13 @@ def stage_a_build_duckdb_ternary(
     con.execute(f"PRAGMA temp_directory='{tmp_dir}';")
     con.execute(f"PRAGMA threads={int(threads)};")
 
-    exists = con.execute(
-        "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
-        [table_name],
-    ).fetchone()[0] > 0
+    exists = (
+        con.execute(
+            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+            [table_name],
+        ).fetchone()[0]
+        > 0
+    )
     if exists and not force:
         con.close()
         return
@@ -199,8 +198,8 @@ def compute_chrom_ternary(
         return f"[INFO] {chrom}: not enough CpGs ({cpg_positions.size})"
 
     n_full = int(cpg_positions.size // k)
-    starts = cpg_positions[0: n_full * k: k]
-    ends = cpg_positions[(k - 1): n_full * k: k] + 2
+    starts = cpg_positions[0 : n_full * k : k]
+    ends = cpg_positions[(k - 1) : n_full * k : k] + 2
 
     con = duckdb.connect(db_path, read_only=True)
     rows = con.execute(
@@ -252,7 +251,7 @@ def compute_chrom_ternary(
     state = state[order]
 
     uniq_mask = np.ones(keys.shape[0], dtype=bool)
-    uniq_mask[1:] = (keys[1:] != keys[:-1])
+    uniq_mask[1:] = keys[1:] != keys[:-1]
     uniq_idx = np.where(uniq_mask)[0]
     group_ends = np.r_[uniq_idx[1:], keys.shape[0]]
 
@@ -261,7 +260,7 @@ def compute_chrom_ternary(
     dedup_cpg_idx = cpg_idx[order][uniq_idx]
     dedup_state = np.zeros(uniq_idx.shape[0], dtype=np.int8)
     for i in range(uniq_idx.shape[0]):
-        dedup_state[i] = state[uniq_idx[i]:group_ends[i]].max()
+        dedup_state[i] = state[uniq_idx[i] : group_ends[i]].max()
 
     powers = _base3_powers(k)
     weighted = (dedup_state.astype(np.int64) * powers[dedup_cpg_idx]).astype(np.int64)
@@ -278,7 +277,7 @@ def compute_chrom_ternary(
     is_5hmc = is_5hmc[rb_order]
 
     rb_uniq = np.ones(rb_keys.shape[0], dtype=bool)
-    rb_uniq[1:] = (rb_keys[1:] != rb_keys[:-1])
+    rb_uniq[1:] = rb_keys[1:] != rb_keys[:-1]
     rb_idx = np.where(rb_uniq)[0]
     rb_end = np.r_[rb_idx[1:], rb_keys.shape[0]]
 
@@ -296,7 +295,7 @@ def compute_chrom_ternary(
         hmc_count[i] = is_5hmc[s0:s1].sum()
 
     full_mask_val = (1 << k) - 1
-    full = (obsmask == full_mask_val)
+    full = obsmask == full_mask_val
     if not np.any(full):
         return _empty_outputs(f"no reads cover all {k} CpGs in any bin")
 
@@ -321,11 +320,11 @@ def compute_chrom_ternary(
     mc_sum_u = np.zeros(uidx.shape[0], dtype=np.int64)
     hmc_sum_u = np.zeros(uidx.shape[0], dtype=np.int64)
     for i in range(uidx.shape[0]):
-        mc_sum_u[i] = mc_count[uidx[i]:uend[i]].sum()
-        hmc_sum_u[i] = hmc_count[uidx[i]:uend[i]].sum()
+        mc_sum_u[i] = mc_count[uidx[i] : uend[i]].sum()
+        hmc_sum_u[i] = hmc_count[uidx[i] : uend[i]].sum()
 
     buniq = np.ones(bins_u.shape[0], dtype=bool)
-    buniq[1:] = (bins_u[1:] != bins_u[:-1])
+    buniq[1:] = bins_u[1:] != bins_u[:-1]
     bidx = np.where(buniq)[0]
     bend = np.r_[bidx[1:], bins_u.shape[0]]
 
@@ -370,9 +369,7 @@ def compute_chrom_ternary(
     return f"[INFO] {chrom}: done ({len(rows):,} rows, {int(cov_arr.sum()):,} coverage)"
 
 
-def concat_ternary_outputs(
-    chroms: list[str], out_chrom_dir: str, out_prefix: str
-) -> None:
+def concat_ternary_outputs(chroms: list[str], out_chrom_dir: str, out_prefix: str) -> None:
     suffixes = ["coverage", "me", "mml", "mhml", "cov_5mc", "cov_5hmc"]
     _ensure_dir(os.path.dirname(out_prefix))
     for suffix in suffixes:
@@ -411,7 +408,11 @@ def run_whole_genome_ternary(
 
     _ensure_dir(os.path.dirname(out_prefix))
     _ensure_dir(work_dir)
-    db_path = os.path.abspath(duckdb_path) if duckdb_path else os.path.join(work_dir, "reads_ternary.duckdb")
+    db_path = (
+        os.path.abspath(duckdb_path)
+        if duckdb_path
+        else os.path.join(work_dir, "reads_ternary.duckdb")
+    )
     tmp = os.path.abspath(tmp_dir) if tmp_dir else os.path.join(work_dir, "duckdb_tmp")
     out_chrom_dir = os.path.join(work_dir, "chrom_bedgraphs_ternary")
     _ensure_dir(tmp)
@@ -433,17 +434,29 @@ def run_whole_genome_ternary(
     if progress_cb:
         progress_cb("[ternary] Stage A: ingest TSV with m/h pivot")
     stage_a_build_duckdb_ternary(
-        tsv_path=tsv_path, db_path=db_path, table_name=duckdb_table,
-        tmp_dir=tmp, threads=int(threads),
-        methyl_thresh=float(methyl_thresh), force=bool(force_ingest),
+        tsv_path=tsv_path,
+        db_path=db_path,
+        table_name=duckdb_table,
+        tmp_dir=tmp,
+        threads=int(threads),
+        methyl_thresh=float(methyl_thresh),
+        force=bool(force_ingest),
     )
 
     nproc = max(1, min(int(threads), len(chrom_list)))
     if progress_cb:
         progress_cb(f"[ternary] Stage B: per-chrom metrics with {nproc} workers")
     args = [
-        (chrom, fasta_path, db_path, duckdb_table, out_chrom_dir,
-         int(cpgs_per_bin), int(min_coverage), int(fasta_chunk))
+        (
+            chrom,
+            fasta_path,
+            db_path,
+            duckdb_table,
+            out_chrom_dir,
+            int(cpgs_per_bin),
+            int(min_coverage),
+            int(fasta_chunk),
+        )
         for chrom in chrom_list
     ]
     total = len(args)

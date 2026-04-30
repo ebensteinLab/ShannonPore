@@ -28,8 +28,12 @@ logger = logging.getLogger(__name__)
 # ─── TSV streaming ────────────────────────────────────────────────────────
 
 _MODKIT_KEEP_COLS = [
-    "read_id", "forward_read_position", "ref_position",
-    "chrom", "ref_strand", "mod_qual",
+    "read_id",
+    "forward_read_position",
+    "ref_position",
+    "chrom",
+    "ref_strand",
+    "mod_qual",
 ]
 
 
@@ -80,11 +84,7 @@ def build_parquet_from_tsv_stream_duckdb(
 
     safe_mkdir(os.path.dirname(parquet_out_path))
 
-    if (
-        os.path.exists(parquet_out_path)
-        and os.path.getsize(parquet_out_path) > 0
-        and not force
-    ):
+    if os.path.exists(parquet_out_path) and os.path.getsize(parquet_out_path) > 0 and not force:
         msg = f"[INFO] Parquet already exists, skipping TSV import: {parquet_out_path}"
         if stream_cb:
             stream_cb(msg)
@@ -138,9 +138,8 @@ def load_grouped_table_to_df_from_tsv(tsv_path: str, chunk_size: int) -> pd.Data
 
 # ─── Region/CpG handling ──────────────────────────────────────────────────
 
-def find_cpg_locations_from_atlas(
-    fasta_path: str, regions_df: pd.DataFrame
-) -> pd.DataFrame:
+
+def find_cpg_locations_from_atlas(fasta_path: str, regions_df: pd.DataFrame) -> pd.DataFrame:
     df = regions_df.copy()
     if "target" not in df.columns:
         df["target"] = df["chr"]
@@ -151,10 +150,11 @@ def find_cpg_locations_from_atlas(
 
     def extract_sequence(row: pd.Series) -> str | None:
         try:
-            return genome[row["chr"]][row["start"]: row["end"]].seq
+            return genome[row["chr"]][row["start"] : row["end"]].seq
         except (KeyError, ValueError) as exc:
-            logger.warning("FASTA lookup failed for %s:%s-%s: %s",
-                           row["chr"], row["start"], row["end"], exc)
+            logger.warning(
+                "FASTA lookup failed for %s:%s-%s: %s", row["chr"], row["start"], row["end"], exc
+            )
             return None
 
     df["sequence"] = df.apply(extract_sequence, axis=1)
@@ -170,9 +170,7 @@ def find_cpg_locations_from_atlas(
     return df
 
 
-def bin_cpg_positions_per_region(
-    df_regions: pd.DataFrame, cpg_per_bin_count: int
-) -> pd.DataFrame:
+def bin_cpg_positions_per_region(df_regions: pd.DataFrame, cpg_per_bin_count: int) -> pd.DataFrame:
     results = []
     for _, region in df_regions.iterrows():
         region_chr = region["chr"]
@@ -195,18 +193,21 @@ def bin_cpg_positions_per_region(
             if bin_edges:
                 bin_edges[-1] = (bin_edges[-1][0], r_end)
 
-        results.append({
-            "chr": region_chr,
-            "start": r_start,
-            "end": r_end,
-            "target": target,
-            "cpg_per_bin": cpg_per_bin,
-            "bin_edges": bin_edges,
-        })
+        results.append(
+            {
+                "chr": region_chr,
+                "start": r_start,
+                "end": r_end,
+                "target": target,
+                "cpg_per_bin": cpg_per_bin,
+                "bin_edges": bin_edges,
+            }
+        )
     return pd.DataFrame(results)
 
 
 # ─── Entropy math ─────────────────────────────────────────────────────────
+
 
 def vect_to_num(bits: np.ndarray) -> int:
     return int(sum(2 ** (len(bits) - 1 - i) * int(bits[i]) for i in range(len(bits))))
@@ -231,7 +232,7 @@ def process_bin(
     if bin_events.empty or cpg_rel.size == 0:
         return {}
     event_pos = bin_events["rel_pos"].values
-    match_matrix = (event_pos[:, None] == cpg_rel[None, :])
+    match_matrix = event_pos[:, None] == cpg_rel[None, :]
     if not match_matrix.any():
         return {}
 
@@ -242,9 +243,7 @@ def process_bin(
     matched["cpg_idx"] = matched_cpg_idx
     matched["status"] = (matched["mod_qual"] > methyl_score_thresh).astype(int)
 
-    pivot = matched.pivot_table(
-        index="read_id", columns="cpg_idx", values="status"
-    ).dropna()
+    pivot = matched.pivot_table(index="read_id", columns="cpg_idx", values="status").dropna()
     return {rid: row.values.astype(int) for rid, row in pivot.iterrows()}
 
 
@@ -316,9 +315,7 @@ def fill_cpg_methylation_optimized_df(
             b_start = bin_edges[i][0] - r_start
             b_end = bin_edges[i][1] - r_start
             mask = (events["rel_pos"] >= b_start) & (events["rel_pos"] <= b_end)
-            meth_data[i] = process_bin(
-                events.loc[mask], rel_cpg_per_bin[i], methyl_score_thresh
-            )
+            meth_data[i] = process_bin(events.loc[mask], rel_cpg_per_bin[i], methyl_score_thresh)
         return meth_data
 
     df_regions["meth_data"] = df_regions["region_id"].apply(process_region)
@@ -346,44 +343,49 @@ def calculate_methylation_entropy_df(df_result: pd.DataFrame) -> pd.DataFrame:
                         var[i] = float(np.var(all_meth))
         return [mml.tolist(), ent.tolist(), var.tolist(), cov.tolist()]
 
-    df_result[
-        ["mml_by_bin", "entropy_by_bin", "variance_by_bin", "coverage_by_bin"]
-    ] = pd.DataFrame(
-        df_result["meth_data"].apply(calc_one).tolist(),
-        index=df_result.index,
+    df_result[["mml_by_bin", "entropy_by_bin", "variance_by_bin", "coverage_by_bin"]] = (
+        pd.DataFrame(
+            df_result["meth_data"].apply(calc_one).tolist(),
+            index=df_result.index,
+        )
     )
     return df_result
 
 
-def unroll_for_plotting(
-    df_result: pd.DataFrame, coverage_threshold: int
-) -> pd.DataFrame:
+def unroll_for_plotting(df_result: pd.DataFrame, coverage_threshold: int) -> pd.DataFrame:
     rows = []
     for _, region in df_result.iterrows():
         chrom = region["chrom"]
-        target_label = region.get(
-            "target", f"{chrom}:{region['start']}-{region['end']}"
-        )
+        target_label = region.get("target", f"{chrom}:{region['start']}-{region['end']}")
         for edges, mml, ent, cov in zip(
             region["bin_edges"],
             region["mml_by_bin"],
             region["entropy_by_bin"],
-            region["coverage_by_bin"], strict=False,
+            region["coverage_by_bin"],
+            strict=False,
         ):
             if int(cov) >= int(coverage_threshold):
-                rows.append({
-                    "chrom": chrom,
-                    "start": int(edges[0]),
-                    "end": int(edges[1]),
-                    "mml": float(mml),
-                    "entropy": float(ent),
-                    "coverage": int(cov),
-                    "region_target": target_label,
-                })
+                rows.append(
+                    {
+                        "chrom": chrom,
+                        "start": int(edges[0]),
+                        "end": int(edges[1]),
+                        "mml": float(mml),
+                        "entropy": float(ent),
+                        "coverage": int(cov),
+                        "region_target": target_label,
+                    }
+                )
     if not rows:
         return pd.DataFrame(
             columns=[
-                "chrom", "start", "end", "mml", "entropy", "coverage", "region_target",
+                "chrom",
+                "start",
+                "end",
+                "mml",
+                "entropy",
+                "coverage",
+                "region_target",
             ]
         )
     return pd.DataFrame(rows)
@@ -399,6 +401,7 @@ def create_bedgraph_from_df(df: pd.DataFrame, value_col: str, out_path: str) -> 
 
 
 # ─── Top-level orchestration ──────────────────────────────────────────────
+
 
 def run_roi_pipeline(
     control_tsv_path: str,

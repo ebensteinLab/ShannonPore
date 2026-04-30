@@ -21,15 +21,30 @@ import pysam
 # Constructed so every CpG is on the + strand and well-separated.
 _CHROM = "chr_test"
 _REF_SEQ = (
-    "AAAA" "CG" "AAAA"      # CpG at pos 4
-    "AAAA" "CG" "AAAA"      # CpG at pos 14
-    "AAAA" "CG" "AAAA"      # CpG at pos 24
-    "AAAA" "CG" "AAAA"      # CpG at pos 34
-    "AAAA" "CG" "AAAA"      # CpG at pos 44
-    "AAAA" "CG" "AAAA"      # CpG at pos 54
-    "AAAA" "CG" "AAAA"      # CpG at pos 64
-    "AAAA" "CG" "AAAA"      # CpG at pos 74
-    + "A" * (200 - 80)
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 4
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 14
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 24
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 34
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 44
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 54
+    "AAAA"
+    "CG"
+    "AAAA"  # CpG at pos 64
+    "AAAA"
+    "CG"
+    "AAAA" + "A" * (200 - 80)  # CpG at pos 74
 )
 CPG_POSITIONS = [4, 14, 24, 34, 44, 54, 64, 74]
 
@@ -121,7 +136,10 @@ def write_methylation_bam(
                 # Methylated → high prob, unmethylated → low prob
                 pattern.append(0.9 if rng.random() < methylated_fraction else 0.05)
             _build_one_read(
-                bam, name=f"read_{i:04d}", seq=seq, methylation_pattern=pattern,
+                bam,
+                name=f"read_{i:04d}",
+                seq=seq,
+                methylation_pattern=pattern,
             )
 
     pysam.sort("-o", str(out_path), str(out_path))
@@ -130,14 +148,20 @@ def write_methylation_bam(
 
 
 def build_tiny_fixture(
-    tmp_path: Path, *, n_reads: int = 30,
-    methylated_fraction: float = 0.5, seed: int = 0,
+    tmp_path: Path,
+    *,
+    n_reads: int = 30,
+    methylated_fraction: float = 0.5,
+    seed: int = 0,
 ) -> tuple[Path, Path]:
     """Convenience wrapper: write FASTA + BAM into ``tmp_path``."""
     fa = write_reference_fasta(tmp_path / "tiny_ref.fa")
     bam = write_methylation_bam(
-        tmp_path / "tiny.bam", fa,
-        n_reads=n_reads, methylated_fraction=methylated_fraction, seed=seed,
+        tmp_path / "tiny.bam",
+        fa,
+        n_reads=n_reads,
+        methylated_fraction=methylated_fraction,
+        seed=seed,
     )
     return fa, bam
 

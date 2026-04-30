@@ -55,8 +55,10 @@ def parse_roi_file_flexible(path: str) -> pd.DataFrame | None:
             if "target" not in df.columns:
                 df["target"] = (
                     df["chr"].astype(str)
-                    + ":" + df["start"].astype(str)
-                    + "-" + df["end"].astype(str)
+                    + ":"
+                    + df["start"].astype(str)
+                    + "-"
+                    + df["end"].astype(str)
                 )
 
             df = df[["chr", "start", "end", "target"]]
@@ -66,8 +68,10 @@ def parse_roi_file_flexible(path: str) -> pd.DataFrame | None:
             if "target" not in df.columns:
                 df["target"] = (
                     df["chr"].astype(str)
-                    + ":" + df["start"].astype(str)
-                    + "-" + df["end"].astype(str)
+                    + ":"
+                    + df["start"].astype(str)
+                    + "-"
+                    + df["end"].astype(str)
                 )
             df = df[["chr", "start", "end", "target"]]
 

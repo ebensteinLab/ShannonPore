@@ -28,7 +28,8 @@ def test_appstate_defaults_are_isolated_per_instance() -> None:
 def test_replace_keeps_other_fields_unchanged() -> None:
     state = AppState()
     new_target = replace(
-        state.file_prep.target, bam_path=Path("/tmp/foo.bam"),
+        state.file_prep.target,
+        bam_path=Path("/tmp/foo.bam"),
     )
     new = replace(
         state,
@@ -41,8 +42,12 @@ def test_replace_keeps_other_fields_unchanged() -> None:
 
 @pytest.mark.unit
 def test_track_plot_defaults() -> None:
+    from src.constants import PALETTE_CONTROL
+
     t = TrackPlot()
-    assert t.color == "#1f77b4"
+    # Default colour is the central palette entry, not a hard-coded hex,
+    # so a future palette change in src.constants flows through here.
+    assert t.color == PALETTE_CONTROL
     assert t.mml_path is None and t.me_path is None and t.coverage_path is None
 
 

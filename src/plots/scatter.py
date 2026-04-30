@@ -10,11 +10,12 @@ Three plot families, all sharing the same paired-bin merge step:
                              with the theoretical binary-entropy arch
                              overlaid. Toggle log/linear.
 
-  3. ``paired_landscape``  — paired-line scatter with direction arrows
-                             showing how many bins shifted up vs down
-                             after a configurable filter
-                             (``MML`` / ``|dMML|`` / ``ME`` / ``|dME|``,
-                             ``<`` or ``>`` a threshold).
+  3. ``paired_landscape``  — paired-line scatter showing per-bin shifts
+                             from control → target. Bin counts (Δ ME ↑
+                             vs Δ ME ↓) appear in a caption below the
+                             axes — no in-plot arrows. Filter by
+                             ``MML`` / ``|dMML|`` / ``ME`` / ``|dME|``
+                             (``<`` or ``>`` a threshold).
 
 Helper:
   ``load_paired_bedgraphs(...)`` joins four bedgraphs on
@@ -33,6 +34,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.collections import LineCollection
 
+from src.constants import PALETTE_CONTROL, PALETTE_TARGET
 from src.io.bedgraph import read_bedgraph
 
 FilterDim = Literal["MML", "|dMML|", "ME", "|dME|"]
@@ -40,6 +42,7 @@ FilterOp = Literal["<", ">"]
 
 
 # ─── Theoretical entropy arch ─────────────────────────────────────────────
+
 
 def theoretical_entropy_binary(p: np.ndarray) -> np.ndarray:
     """Shannon entropy of a Bernoulli(p), normalised to log2 base.
@@ -55,6 +58,7 @@ def theoretical_entropy_binary(p: np.ndarray) -> np.ndarray:
 
 
 # ─── Bedgraph join ────────────────────────────────────────────────────────
+
 
 def load_paired_bedgraphs(
     *,
@@ -85,23 +89,29 @@ def load_paired_bedgraphs(
 
 # ─── Colour map helpers (lifted from the user's reference script) ─────────
 
+
 def _seq_cmap(hex_color: str, lo: float = 0.2) -> mcolors.Colormap:
     rgb = mcolors.to_rgb(hex_color)
     r0 = 1.0 - lo * (1.0 - rgb[0])
     g0 = 1.0 - lo * (1.0 - rgb[1])
     b0 = 1.0 - lo * (1.0 - rgb[2])
     return mcolors.LinearSegmentedColormap.from_list(
-        "seq", [(1, 1, 1), (r0, g0, b0), rgb], N=256,
+        "seq",
+        [(1, 1, 1), (r0, g0, b0), rgb],
+        N=256,
     )
 
 
 def _div_cmap(c_hex: str, t_hex: str) -> mcolors.Colormap:
     return mcolors.LinearSegmentedColormap.from_list(
-        "div", [mcolors.to_rgb(c_hex), (1, 1, 1), mcolors.to_rgb(t_hex)], N=512,
+        "div",
+        [mcolors.to_rgb(c_hex), (1, 1, 1), mcolors.to_rgb(t_hex)],
+        N=512,
     )
 
 
 # ─── Plot 1: ME and MML control-vs-target scatters ───────────────────────
+
 
 def me_mml_scatter(
     df: pd.DataFrame,
@@ -125,8 +135,9 @@ def me_mml_scatter(
         x = df[f"{metric}_a"].to_numpy()
         y = df[f"{metric}_b"].to_numpy()
         if x.size == 0:
-            ax.text(0.5, 0.5, "no overlapping bins",
-                    ha="center", va="center", transform=ax.transAxes)
+            ax.text(
+                0.5, 0.5, "no overlapping bins", ha="center", va="center", transform=ax.transAxes
+            )
             ax.set_title(title)
             continue
 
@@ -150,9 +161,14 @@ def me_mml_scatter(
             vmax = float(np.percentile(finite, vmax_pct)) if finite.size else 1.0
 
         im = ax.imshow(
-            Hd, origin="lower", extent=[0, axis_cap, 0, axis_cap],
-            aspect="auto", cmap="viridis",
-            vmin=vmin, vmax=max(vmax, vmin + 1e-6), interpolation="nearest",
+            Hd,
+            origin="lower",
+            extent=[0, axis_cap, 0, axis_cap],
+            aspect="auto",
+            cmap="viridis",
+            vmin=vmin,
+            vmax=max(vmax, vmin + 1e-6),
+            interpolation="nearest",
         )
         # y = x reference line
         ax.plot([0, axis_cap], [0, axis_cap], "--", color="black", lw=1, alpha=0.6)
@@ -174,13 +190,14 @@ def me_mml_scatter(
 
 # ─── Plot 2: triple landscape (A | B | diff) with entropy arch ───────────
 
+
 def triple_landscape(
     df: pd.DataFrame,
     *,
     label_a: str,
     label_b: str,
-    color_a: str = "#1f77b4",
-    color_b: str = "#ff7f0e",
+    color_a: str = PALETTE_CONTROL,
+    color_b: str = PALETTE_TARGET,
     log_scale: bool = True,
     gridsize: int = 80,
     axis_cap: float = 1.0,
@@ -220,16 +237,17 @@ def triple_landscape(
         H_a_d = np.log10(H_a_m)
         H_b_d = np.log10(H_b_m)
         cbar_dens = "log10(count)"
-        all_v = np.concatenate([
-            H_a_d[np.isfinite(H_a_d)], H_b_d[np.isfinite(H_b_d)],
-        ])
+        all_v = np.concatenate(
+            [
+                H_a_d[np.isfinite(H_a_d)],
+                H_b_d[np.isfinite(H_b_d)],
+            ]
+        )
         s_vmin = float(np.nanmin(all_v)) if all_v.size else 0.0
         s_vmax = float(np.percentile(all_v, vmax_pct)) if all_v.size else 1.0
-        H_diff_d = np.sign(H_diff_m) * np.log10(
-            1 + np.abs(H_diff_m) / diff_linthresh
-        )
+        H_diff_d = np.sign(H_diff_m) * np.log10(1 + np.abs(H_diff_m) / diff_linthresh)
         cbar_diff = f"symlog10(Δ, t={diff_linthresh:.0f})"
-        d_vmax = np.log10(1 + 10 ** s_vmax / diff_linthresh)
+        d_vmax = np.log10(1 + 10**s_vmax / diff_linthresh)
     else:
         H_a_d = H_a_m
         H_b_d = H_b_m
@@ -238,9 +256,12 @@ def triple_landscape(
         if linear_vmax is not None:
             s_vmax = float(linear_vmax)
         else:
-            all_v = np.concatenate([
-                H_a_d[np.isfinite(H_a_d)], H_b_d[np.isfinite(H_b_d)],
-            ])
+            all_v = np.concatenate(
+                [
+                    H_a_d[np.isfinite(H_a_d)],
+                    H_b_d[np.isfinite(H_b_d)],
+                ]
+            )
             s_vmax = float(np.percentile(all_v, vmax_pct)) if all_v.size else 1.0
         H_diff_d = H_diff_m
         cbar_diff = "Δ count"
@@ -262,28 +283,47 @@ def triple_landscape(
     fig, axes = plt.subplots(1, 3, figsize=(22, 7))
 
     im0 = axes[0].imshow(
-        H_a_d, origin="lower", extent=extent, aspect="auto",
-        cmap=cm_a, vmin=s_vmin, vmax=s_vmax, interpolation="nearest",
+        H_a_d,
+        origin="lower",
+        extent=extent,
+        aspect="auto",
+        cmap=cm_a,
+        vmin=s_vmin,
+        vmax=s_vmax,
+        interpolation="nearest",
     )
     axes[0].plot(p, arch, "k", linewidth=2)
     axes[0].set_title(f"{label_a} — ME vs MML ({scale_label})", fontsize=13)
     fig.colorbar(im0, ax=axes[0], label=cbar_dens, fraction=0.046, pad=0.02)
 
     im1 = axes[1].imshow(
-        H_b_d, origin="lower", extent=extent, aspect="auto",
-        cmap=cm_b, vmin=s_vmin, vmax=s_vmax, interpolation="nearest",
+        H_b_d,
+        origin="lower",
+        extent=extent,
+        aspect="auto",
+        cmap=cm_b,
+        vmin=s_vmin,
+        vmax=s_vmax,
+        interpolation="nearest",
     )
     axes[1].plot(p, arch, "k", linewidth=2)
     axes[1].set_title(f"{label_b} — ME vs MML ({scale_label})", fontsize=13)
     fig.colorbar(im1, ax=axes[1], label=cbar_dens, fraction=0.046, pad=0.02)
 
     im2 = axes[2].imshow(
-        H_diff_d, origin="lower", extent=extent, aspect="auto",
-        cmap=diff_cm, vmin=-d_vmax, vmax=d_vmax, interpolation="nearest",
+        H_diff_d,
+        origin="lower",
+        extent=extent,
+        aspect="auto",
+        cmap=diff_cm,
+        vmin=-d_vmax,
+        vmax=d_vmax,
+        interpolation="nearest",
     )
     axes[2].plot(p, arch, "k", linewidth=2)
     axes[2].set_title(
-        f"Difference — {label_b} − {label_a} ({scale_label})", fontsize=13,
+        f"Difference — {label_b} − {label_a} ({scale_label})",
+        fontsize=13,
     )
     fig.colorbar(im2, ax=axes[2], label=cbar_diff, fraction=0.046, pad=0.02)
 
@@ -304,8 +344,12 @@ def triple_landscape(
 
 # ─── Plot 3: paired-bin landscape ────────────────────────────────────────
 
+
 def _apply_filter(
-    df: pd.DataFrame, dim: FilterDim, op: FilterOp, value: float,
+    df: pd.DataFrame,
+    dim: FilterDim,
+    op: FilterOp,
+    value: float,
 ) -> pd.DataFrame:
     """Apply a single ``dim {op} value`` filter to a paired bedgraph df.
 
@@ -336,8 +380,8 @@ def paired_landscape(
     *,
     label_a: str,
     label_b: str,
-    color_a: str = "#1f77b4",
-    color_b: str = "#ff7f0e",
+    color_a: str = PALETTE_CONTROL,
+    color_b: str = PALETTE_TARGET,
     filter_a_dim: FilterDim | None = "|dMML|",
     filter_a_op: FilterOp = "<",
     filter_a_value: float = 0.1,
@@ -370,9 +414,14 @@ def paired_landscape(
 
     if n_bins == 0:
         ax.text(
-            0.5, 0.5, "no bins pass filter",
-            ha="center", va="center", transform=ax.transAxes,
-            fontsize=12, color="#a04040",
+            0.5,
+            0.5,
+            "no bins pass filter",
+            ha="center",
+            va="center",
+            transform=ax.transAxes,
+            fontsize=12,
+            color="#a04040",
         )
         ax.set_xlim(0, 1)
         ax.set_ylim(0, 1.05)
@@ -382,11 +431,7 @@ def paired_landscape(
             fig.savefig(out_path, dpi=200, bbox_inches="tight")
         return fig
 
-    plot_sub = (
-        sub.sample(min(n_bins, max_lines), random_state=1)
-        if n_bins > max_lines
-        else sub
-    )
+    plot_sub = sub.sample(min(n_bins, max_lines), random_state=1) if n_bins > max_lines else sub
     n_drawn = len(plot_sub)
 
     # Paired faint lines (drawn as one LineCollection — orders of magnitude
@@ -399,25 +444,45 @@ def paired_landscape(
             ],
             axis=1,
         )
-        ax.add_collection(LineCollection(
-            segs, linewidths=0.5, alpha=0.03, colors="black", zorder=1,
-        ))
+        ax.add_collection(
+            LineCollection(
+                segs,
+                linewidths=0.5,
+                alpha=0.03,
+                colors="black",
+                zorder=1,
+            )
+        )
 
     # Per-sample scatter
     ax.scatter(
-        plot_sub["mml_a"], plot_sub["me_a"],
-        s=6, alpha=0.3, color=color_a, label=label_a, zorder=3,
+        plot_sub["mml_a"],
+        plot_sub["me_a"],
+        s=6,
+        alpha=0.3,
+        color=color_a,
+        label=label_a,
+        zorder=3,
     )
     ax.scatter(
-        plot_sub["mml_b"], plot_sub["me_b"],
-        s=6, alpha=0.3, color=color_b, label=label_b, zorder=3,
+        plot_sub["mml_b"],
+        plot_sub["me_b"],
+        s=6,
+        alpha=0.3,
+        color=color_b,
+        label=label_b,
+        zorder=3,
     )
 
     # Theoretical entropy arch
     p = np.linspace(0, 1, 400)
     ax.plot(
-        p, theoretical_entropy_binary(p),
-        lw=2, color="black", alpha=0.9, zorder=5,
+        p,
+        theoretical_entropy_binary(p),
+        lw=2,
+        color="black",
+        alpha=0.9,
+        zorder=5,
         label="Theoretical arch",
     )
 
@@ -456,9 +521,14 @@ def paired_landscape(
     if n_drawn < n_bins:
         caption += f"\n(counts over all {n_bins:,} filtered bins; {n_drawn:,} lines shown)"
     fig.text(
-        0.5, 0.04, caption,
-        ha="center", va="bottom",
-        fontsize=11, fontweight="bold", color="#222222",
+        0.5,
+        0.04,
+        caption,
+        ha="center",
+        va="bottom",
+        fontsize=11,
+        fontweight="bold",
+        color="#222222",
     )
 
     if out_path:

@@ -55,8 +55,7 @@ def test_find_bams_missing_folder_raises(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
-@pytest.mark.skipif(shutil.which("samtools") is None,
-                    reason="samtools not on PATH")
+@pytest.mark.skipif(shutil.which("samtools") is None, reason="samtools not on PATH")
 def test_merge_sort_index_single_bam(tmp_path: Path) -> None:
     """One BAM: no merge step, just sort+index."""
     pysam = pytest.importorskip("pysam")
@@ -64,8 +63,7 @@ def test_merge_sort_index_single_bam(tmp_path: Path) -> None:
 
     # Build a tiny BAM
     bam = tmp_path / "in.bam"
-    header = {"HD": {"VN": "1.6", "SO": "unsorted"},
-              "SQ": [{"LN": 100, "SN": "chr1"}]}
+    header = {"HD": {"VN": "1.6", "SO": "unsorted"}, "SQ": [{"LN": 100, "SN": "chr1"}]}
     with pysam.AlignmentFile(str(bam), "wb", header=header) as bf:
         a = pysam.AlignedSegment(bf.header)
         a.query_name = "r1"

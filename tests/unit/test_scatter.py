@@ -28,12 +28,14 @@ from src.plots.scatter import (
 def paired_df() -> pd.DataFrame:
     rng = np.random.default_rng(42)
     n = 200
-    return pd.DataFrame({
-        "mml_a": rng.uniform(0, 1, n),
-        "me_a": rng.uniform(0, 1, n),
-        "mml_b": rng.uniform(0, 1, n),
-        "me_b": rng.uniform(0, 1, n),
-    })
+    return pd.DataFrame(
+        {
+            "mml_a": rng.uniform(0, 1, n),
+            "me_a": rng.uniform(0, 1, n),
+            "mml_b": rng.uniform(0, 1, n),
+            "me_b": rng.uniform(0, 1, n),
+        }
+    )
 
 
 @pytest.mark.unit
@@ -70,7 +72,10 @@ def test_me_mml_scatter_handles_empty_df() -> None:
 @pytest.mark.unit
 def test_triple_landscape_renders_three_panels(paired_df) -> None:
     fig = triple_landscape(
-        paired_df, label_a="A", label_b="B", log_scale=False,
+        paired_df,
+        label_a="A",
+        label_b="B",
+        log_scale=False,
     )
     assert len(fig.axes) >= 3
     plt.close(fig)
@@ -79,8 +84,11 @@ def test_triple_landscape_renders_three_panels(paired_df) -> None:
 @pytest.mark.unit
 def test_paired_landscape_no_filter(paired_df) -> None:
     fig = paired_landscape(
-        paired_df, label_a="A", label_b="B",
-        filter_a_dim=None, filter_b_dim=None,
+        paired_df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim=None,
+        filter_b_dim=None,
     )
     plt.close(fig)
 
@@ -88,13 +96,21 @@ def test_paired_landscape_no_filter(paired_df) -> None:
 @pytest.mark.unit
 def test_paired_landscape_no_bins_pass_filter() -> None:
     """Filter forces zero-survivor branch — must not crash."""
-    df = pd.DataFrame({
-        "mml_a": [0.5], "me_a": [0.5],
-        "mml_b": [0.5], "me_b": [0.5],
-    })
+    df = pd.DataFrame(
+        {
+            "mml_a": [0.5],
+            "me_a": [0.5],
+            "mml_b": [0.5],
+            "me_b": [0.5],
+        }
+    )
     fig = paired_landscape(
-        df, label_a="A", label_b="B",
-        filter_a_dim="|dMML|", filter_a_op=">", filter_a_value=0.9,
+        df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim="|dMML|",
+        filter_a_op=">",
+        filter_a_value=0.9,
         filter_b_dim=None,
     )
     # The fallback text should be drawn on the only axes.
@@ -108,8 +124,11 @@ def test_paired_landscape_subsamples_when_over_max(paired_df) -> None:
     """max_lines smaller than n_bins must keep counts on full set but
     only draw `max_lines` segments — no crash, caption updates."""
     fig = paired_landscape(
-        paired_df, label_a="A", label_b="B",
-        filter_a_dim=None, filter_b_dim=None,
+        paired_df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim=None,
+        filter_b_dim=None,
         max_lines=10,  # df has 200
     )
     plt.close(fig)

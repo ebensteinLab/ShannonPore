@@ -52,7 +52,9 @@ class SampleResult:
 
 
 def _resolve_bam(
-    spec, out_dir: Path, threads: int,
+    spec,
+    out_dir: Path,
+    threads: int,
     progress_cb: Callable[[str], None] | None,
     pct_cb: Callable[[float, str], None] | None,
 ) -> Path | None:
@@ -68,15 +70,16 @@ def _resolve_bam(
             raise ValueError(f"sample '{spec.label}': bam_folder not set")
         bams = find_bams(spec.bam_folder)
         if not bams:
-            raise ValueError(
-                f"sample '{spec.label}': no .bam files in {spec.bam_folder}"
-            )
+            raise ValueError(f"sample '{spec.label}': no .bam files in {spec.bam_folder}")
         if progress_cb:
             progress_cb(f"[bam] found {len(bams)} BAMs in {spec.bam_folder}")
         merged = out_dir / f"{spec.label}_merged.sorted.bam"
         return merge_sort_index_bams(
-            bams, merged, threads=threads,
-            progress_cb=progress_cb, pct_cb=pct_cb,
+            bams,
+            merged,
+            threads=threads,
+            progress_cb=progress_cb,
+            pct_cb=pct_cb,
         )
     raise ValueError(f"unknown input_kind: {spec.input_kind!r}")
 
@@ -174,7 +177,12 @@ def run_one_sample(
             )
 
     tsv_path, bam_used = _ensure_tsv(
-        spec, out_dir, fasta, threads, progress_cb, pct_cb,
+        spec,
+        out_dir,
+        fasta,
+        threads,
+        progress_cb,
+        pct_cb,
         status_cb=status_cb,
     )
 
@@ -250,14 +258,17 @@ def run_pipeline(
     if control_spec is None:
         target = run_one_sample(
             target_spec,
-            out_dir=out_dir, fasta=fasta,
+            out_dir=out_dir,
+            fasta=fasta,
             entropy_mode=entropy_mode,
             cpgs_per_bin=cpgs_per_bin,
             min_coverage=min_coverage,
             methyl_threshold=methyl_threshold,
-            threads=threads, chroms=chroms,
+            threads=threads,
+            chroms=chroms,
             force_ingest=force_ingest,
-            progress_cb=progress_cb, pct_cb=pct_cb,
+            progress_cb=progress_cb,
+            pct_cb=pct_cb,
             status_cb=status_cb,
         )
         return target, None
@@ -276,28 +287,34 @@ def run_pipeline(
         progress_cb("[pair] running CONTROL sample")
     control = run_one_sample(
         control_spec,
-        out_dir=out_dir, fasta=fasta,
+        out_dir=out_dir,
+        fasta=fasta,
         entropy_mode=entropy_mode,
         cpgs_per_bin=cpgs_per_bin,
         min_coverage=min_coverage,
         methyl_threshold=methyl_threshold,
-        threads=threads, chroms=chroms,
+        threads=threads,
+        chroms=chroms,
         force_ingest=force_ingest,
-        progress_cb=progress_cb, pct_cb=half_pct(0.0),
+        progress_cb=progress_cb,
+        pct_cb=half_pct(0.0),
         status_cb=status_cb,
     )
     if progress_cb:
         progress_cb("[pair] running TARGET sample")
     target = run_one_sample(
         target_spec,
-        out_dir=out_dir, fasta=fasta,
+        out_dir=out_dir,
+        fasta=fasta,
         entropy_mode=entropy_mode,
         cpgs_per_bin=cpgs_per_bin,
         min_coverage=min_coverage,
         methyl_threshold=methyl_threshold,
-        threads=threads, chroms=chroms,
+        threads=threads,
+        chroms=chroms,
         force_ingest=force_ingest,
-        progress_cb=progress_cb, pct_cb=half_pct(0.5),
+        progress_cb=progress_cb,
+        pct_cb=half_pct(0.5),
         status_cb=status_cb,
     )
     return target, control

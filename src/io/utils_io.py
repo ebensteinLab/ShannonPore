@@ -34,9 +34,7 @@ def ensure_writable_dir(path_value: PathLike, description: str) -> str:
             f.write("ok")
         os.remove(test_file)
     except OSError as exc:
-        raise ValueError(
-            f"{description} is not writable: {abs_path}. Error: {exc}"
-        ) from exc
+        raise ValueError(f"{description} is not writable: {abs_path}. Error: {exc}") from exc
 
     return abs_path
 
@@ -55,4 +53,4 @@ def disk_free_gb(path_value: PathLike) -> float:
     except OSError as exc:
         logger.warning("disk_free_gb(%s) failed: %s", path_value, exc)
         return -1.0
-    return float(usage.free) / (1024.0 ** 3)
+    return float(usage.free) / (1024.0**3)

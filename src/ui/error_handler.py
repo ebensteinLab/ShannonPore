@@ -27,6 +27,7 @@ def show_error(*, user_message: str | None = None, reraise: bool = False) -> Cal
             class name is used.
         reraise: if True, re-raise after rendering. Useful for tests.
     """
+
     def decorate(fn: F) -> F:
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:

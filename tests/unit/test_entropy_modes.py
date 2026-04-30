@@ -20,7 +20,9 @@ from src.state import FilePrepState
 @pytest.mark.unit
 def test_entropy_modes_defined() -> None:
     assert ENTROPY_MODES == (
-        ENTROPY_MODE_TRUE_MC, ENTROPY_MODE_BISULFITE, ENTROPY_MODE_TERNARY,
+        ENTROPY_MODE_TRUE_MC,
+        ENTROPY_MODE_BISULFITE,
+        ENTROPY_MODE_TERNARY,
     )
 
 
@@ -54,7 +56,8 @@ def test_stage_a_rejects_ternary_mode(tmp_path) -> None:
             db_path=str(tmp_path / "x.duckdb"),
             table_name="t",
             tmp_dir=str(tmp_path / "tmp"),
-            threads=1, force=False,
+            threads=1,
+            force=False,
             entropy_mode="ternary",
         )
 
@@ -70,6 +73,7 @@ def test_stage_a_rejects_unknown_mode(tmp_path) -> None:
             db_path=str(tmp_path / "x.duckdb"),
             table_name="t",
             tmp_dir=str(tmp_path / "tmp"),
-            threads=1, force=False,
+            threads=1,
+            force=False,
             entropy_mode="not-a-mode",
         )

@@ -105,12 +105,17 @@ global commands. They use `mamba run` under the hood, which means you
 **never** need to `mamba activate shannonpore` — the env is resolved
 automatically.
 
-**Reference data**: by default the tool looks in `<repo>/reference_files/`
-for FASTAs + GTFs. Either populate that directory (run
-`bash scripts/setup_references.sh --genome hg38`), pass `--fasta` /
-"custom FASTA" per invocation, or set `SHANNONPORE_REF_DIR` to a folder
-you already have. `selftest` doesn't need any of this — it builds its
-own synthetic FASTA.
+**Reference data**: bundled hg38 + mm10 FASTAs + RefSeq GTFs are
+downloaded automatically by `install.sh` (multi-GiB; 20–60 min). Anything
+still missing is fetched lazily on first use — type a region or hit
+**Run** in the GUI and the GTF / FASTA will pull from UCSC on demand
+(~40 MiB GTF, ~1 GiB FASTA → ~3 GiB unzipped + `samtools faidx`).
+
+To pre-fetch ahead of time: `shannonpore prefetch hg38 mm10`. To skip
+the install-time fetch: `SHANNONPORE_SKIP_REFERENCES=1 bash install.sh`.
+You can also pass `--fasta` (CLI) or "custom FASTA" (GUI) per invocation,
+or set `SHANNONPORE_REF_DIR` to point at an existing shared directory.
+`selftest` doesn't need any of this — it builds its own synthetic FASTA.
 
 ## Usage
 

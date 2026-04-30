@@ -6,15 +6,17 @@ workflow, or in a notebook without launching a browser.
 
 Subcommands
 -----------
-- ``extract``   BAM → modkit TSV
+- ``extract``   BAM (or folder of BAMs) → modkit TSV
 - ``entropy``   modkit TSV → ME / MML / coverage bedgraphs
                 (--mode true_mc | bisulfite | ternary)
-- ``segment``   bedgraph → segments BED (PELT or greedy)
-- ``annotate``  segments BED → gene + GO annotation via R bridge
 - ``plot``      bedgraphs → track / ME-MML scatter / arch / paired landscape PNG
-- ``run``       one-shot pipeline: BAM → entropy → segment → annotate
+- ``run``       one-shot pipeline: BAM(/folder)/TSV → entropy bedgraphs
+                (single sample or pair mode)
+- ``prefetch``  pre-download bundled FASTA + GTF for hg38 / mm10
 - ``doctor``    verify every dependency, version, and permission
 - ``selftest``  end-to-end pipeline smoke test on a synthetic BAM
+- ``guide``     print the user guide
+- ``examples``  print common-recipe cheat sheet
 
 Each subcommand has its own ``--help`` and accepts the same parameters
 the GUI exposes.
@@ -51,12 +53,15 @@ from src.constants import (
     ENTROPY_MODE_TERNARY,
     ENTROPY_MODE_TRUE_MC,
     ENTROPY_MODES,
+    PALETTE_CONTROL,
+    PALETTE_TARGET,
 )
 
 logger = logging.getLogger("shannonpore.cli")
 
 
 # ─────────────────────────── helpers ──────────────────────────────────────
+
 
 def _resolve_fasta(genome: str, custom: str | None) -> Path:
     """Return a usable FASTA path. If --fasta wasn't supplied, fall back
@@ -94,6 +99,7 @@ def _print_progress(msg: str) -> None:
 
 # ─────────────────────────── extract ──────────────────────────────────────
 
+
 def cmd_extract(args: argparse.Namespace) -> int:
     from src.pipelines.bam_utils import find_bams, merge_sort_index_bams
     from src.pipelines.modkit_runner import run_modkit_extract_minimal
@@ -113,8 +119,11 @@ def cmd_extract(args: argparse.Namespace) -> int:
             bar.status(f"found {len(bams)} BAMs in {args.bam_folder}")
             merged_bam = out_tsv.parent / "merged.sorted.bam"
             bam_path = merge_sort_index_bams(
-                bams, merged_bam, threads=int(args.threads),
-                progress_cb=bar.status, pct_cb=bar.update,
+                bams,
+                merged_bam,
+                threads=int(args.threads),
+                progress_cb=bar.status,
+                pct_cb=bar.update,
             )
     else:
         bam_path = Path(args.bam).expanduser().resolve()
@@ -134,15 +143,18 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── entropy ──────────────────────────────────────
 
+
 def cmd_entropy(args: argparse.Namespace) -> int:
     from src.ui.progress import CLIProgress
 
     fasta = _resolve_fasta(args.genome, args.fasta)
     out_prefix = Path(args.out_prefix).expanduser().resolve()
     out_prefix.parent.mkdir(parents=True, exist_ok=True)
-    work_dir = Path(
-        args.work_dir or (out_prefix.parent / f"{out_prefix.name}_work")
-    ).expanduser().resolve()
+    work_dir = (
+        Path(args.work_dir or (out_prefix.parent / f"{out_prefix.name}_work"))
+        .expanduser()
+        .resolve()
+    )
     work_dir.mkdir(parents=True, exist_ok=True)
 
     with CLIProgress(f"entropy · {args.mode}") as bar:
@@ -151,6 +163,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
                 required_coverage_for_k,
                 run_whole_genome_ternary,
             )
+
             rec = required_coverage_for_k(int(args.cpgs_per_bin))
             if int(args.min_coverage) < rec:
                 bar.status(
@@ -175,6 +188,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
             from src.pipelines.whole_genome_duckdb_pipeline import (
                 run_whole_genome_duckdb_only,
             )
+
             run_whole_genome_duckdb_only(
                 tsv_path=str(Path(args.tsv).expanduser().resolve()),
                 fasta_path=str(fasta),
@@ -196,6 +210,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── plot ─────────────────────────────────────────
 
+
 def cmd_plot(args: argparse.Namespace) -> int:
     from src.plots.scatter import (
         load_paired_bedgraphs,
@@ -215,8 +230,7 @@ def cmd_plot(args: argparse.Namespace) -> int:
         for required in ("control_mml", "control_me", "target_mml", "target_me"):
             if not getattr(args, required):
                 raise SystemExit(
-                    f"--{required.replace('_', '-')} is required for "
-                    f"plot kind 'tracks'."
+                    f"--{required.replace('_', '-')} is required for " f"plot kind 'tracks'."
                 )
         # Default GTF: bundled per-genome (downloads on first use) unless
         # the user passed --gtf.
@@ -227,17 +241,24 @@ def cmd_plot(args: argparse.Namespace) -> int:
             except RuntimeError as exc:
                 logger.warning(
                     "Could not download GTF for %s — gene panel will be empty: %s",
-                    args.genome, exc,
+                    args.genome,
+                    exc,
                 )
                 gtf = None
         plot_region_tracks(
-            chrom=args.chrom, start=int(args.start), end=int(args.end),
-            control_mml=args.control_mml, target_mml=args.target_mml,
-            control_me=args.control_me, target_me=args.target_me,
+            chrom=args.chrom,
+            start=int(args.start),
+            end=int(args.end),
+            control_mml=args.control_mml,
+            target_mml=args.target_mml,
+            control_me=args.control_me,
+            target_me=args.target_me,
             control_coverage=args.control_coverage,
             target_coverage=args.target_coverage,
-            label_a=args.label_a, label_b=args.label_b,
-            color_a=args.color_a, color_b=args.color_b,
+            label_a=args.label_a,
+            label_b=args.label_b,
+            color_a=args.color_a,
+            color_b=args.color_b,
             gtf_path=gtf,
             smooth_win=int(args.window),
             pad_bp=int(args.pad),
@@ -248,8 +269,7 @@ def cmd_plot(args: argparse.Namespace) -> int:
         for required in ("control_mml", "control_me", "target_mml", "target_me"):
             if not getattr(args, required):
                 raise SystemExit(
-                    f"--{required.replace('_', '-')} is required for "
-                    f"plot kind '{args.kind}'."
+                    f"--{required.replace('_', '-')} is required for " f"plot kind '{args.kind}'."
                 )
         df = load_paired_bedgraphs(
             control_mml=args.control_mml,
@@ -258,29 +278,34 @@ def cmd_plot(args: argparse.Namespace) -> int:
             target_me=args.target_me,
         )
         if df.empty:
-            raise SystemExit(
-                "No overlapping bins found across the four bedgraphs."
-            )
+            raise SystemExit("No overlapping bins found across the four bedgraphs.")
         log_scale = bool(args.log_scale)
 
         if args.kind == "scatter":
             me_mml_scatter(
                 df,
-                label_a=args.label_a, label_b=args.label_b,
-                log_scale=log_scale, out_path=str(out_path),
+                label_a=args.label_a,
+                label_b=args.label_b,
+                log_scale=log_scale,
+                out_path=str(out_path),
             )
         elif args.kind == "arch":
             triple_landscape(
                 df,
-                label_a=args.label_a, label_b=args.label_b,
-                color_a=args.color_a, color_b=args.color_b,
-                log_scale=log_scale, out_path=str(out_path),
+                label_a=args.label_a,
+                label_b=args.label_b,
+                color_a=args.color_a,
+                color_b=args.color_b,
+                log_scale=log_scale,
+                out_path=str(out_path),
             )
         else:  # landscape (paired)
             paired_landscape(
                 df,
-                label_a=args.label_a, label_b=args.label_b,
-                color_a=args.color_a, color_b=args.color_b,
+                label_a=args.label_a,
+                label_b=args.label_b,
+                color_a=args.color_a,
+                color_b=args.color_b,
                 filter_a_dim=None if args.filter_a_dim == "off" else args.filter_a_dim,
                 filter_a_op=args.filter_a_op,
                 filter_a_value=float(args.filter_a_value),
@@ -297,6 +322,7 @@ def cmd_plot(args: argparse.Namespace) -> int:
 
 
 # ─────────────────────────── run (one-shot) ───────────────────────────────
+
 
 def _spec_from_args(args, prefix: str, default_label: str):
     """Build a SampleSpec from CLI flags. `prefix` is "" for single mode,
@@ -319,11 +345,12 @@ def _spec_from_args(args, prefix: str, default_label: str):
         return SampleSpec(label=label, input_kind="tsv", tsv_path=Path(tsv))
     if folder:
         return SampleSpec(
-            label=label, input_kind="bam_folder", bam_folder=Path(folder),
+            label=label,
+            input_kind="bam_folder",
+            bam_folder=Path(folder),
         )
     raise SystemExit(
-        f"For {default_label!r}: provide --{prefix}bam, --{prefix}tsv, "
-        f"or --{prefix}bam-folder."
+        f"For {default_label!r}: provide --{prefix}bam, --{prefix}tsv, " f"or --{prefix}bam-folder."
     )
 
 
@@ -404,6 +431,7 @@ def cmd_run(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── prefetch ─────────────────────────────────────
 
+
 def cmd_prefetch(args: argparse.Namespace) -> int:
     """Pre-download bundled reference assets for one or both genomes.
 
@@ -433,19 +461,23 @@ def cmd_prefetch(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── guide / examples ────────────────────────────
 
+
 def cmd_guide(args: argparse.Namespace) -> int:
     from src.help_text import GUIDE
+
     print(GUIDE)
     return 0
 
 
 def cmd_examples(args: argparse.Namespace) -> int:
     from src.help_text import EXAMPLES
+
     print(EXAMPLES)
     return 0
 
 
 # ─────────────────────────── doctor ───────────────────────────────────────
+
 
 def cmd_doctor(args: argparse.Namespace) -> int:
     """Verify every required dependency, version, and permission.
@@ -462,7 +494,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     checks: list[tuple[str, str, bool, str, str]] = []
 
     def check(
-        name: str, expected: str, ok: bool, detail: str = "",
+        name: str,
+        expected: str,
+        ok: bool,
+        detail: str = "",
         severity: str = "must",
     ) -> None:
         checks.append((name, expected, ok, detail, severity))
@@ -478,17 +513,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
     # ── Pinned Python packages ──
     pinned = {
-        "streamlit": "1.51.0",
+        "streamlit": "1.57.0",
         "pandas": "2.2.3",
         "numpy": "1.26.4",
-        "duckdb": "1.4.3",
-        "matplotlib": "3.8.4",
+        "duckdb": "1.5.2",
+        "matplotlib": "3.10.9",
         "seaborn": "0.13.2",
-        "pyfaidx": "0.8.1.2",
-        "pysam": "0.22.1",
-        "plotly": "6.2.0",
-        "tqdm": "4.67.1",
-        "scipy": "1.11.4",
+        "pyfaidx": "0.9.0.4",
+        "pysam": "0.24.0",
+        "plotly": "6.7.0",
+        "tqdm": "4.67.3",
+        "scipy": "1.15.3",
     }
     for pkg, want in pinned.items():
         try:
@@ -506,7 +541,10 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             continue
         try:
             out = subprocess.run(  # noqa: S603
-                [binary, "--version"], capture_output=True, text=True, timeout=10,
+                [binary, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=10,
             )
             ver_line = (out.stdout or out.stderr).strip().splitlines()[0]
             ok = expected in ver_line
@@ -520,21 +558,17 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     ensure_dirs()  # creates REFERENCE_DIR if missing
     check("REFERENCE_DIR", "exists", REFERENCE_DIR.exists(), str(REFERENCE_DIR))
 
-    fix_hint = (
-        "auto-fetched on first GUI run, or pre-fetch with "
-        "`shannonpore prefetch <genome>`"
-    )
+    fix_hint = "auto-fetched on first GUI run, or pre-fetch with " "`shannonpore prefetch <genome>`"
     for genome, status in reference_status().items():
         all_good = all(status.values())
-        detail = (
-            "fasta + .fai + GTF present"
-            if all_good
-            else f"not yet cached — {fix_hint}"
-        )
+        detail = "fasta + .fai + GTF present" if all_good else f"not yet cached — {fix_hint}"
         # Reference assets are lazy-downloaded on demand; missing is
         # "advise", never blocking.
         check(
-            f"refs:{genome}", "fasta+fai+gtf", all_good, detail,
+            f"refs:{genome}",
+            "fasta+fai+gtf",
+            all_good,
+            detail,
             severity="advise",
         )
 
@@ -593,6 +627,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── selftest ─────────────────────────────────────
 
+
 def cmd_selftest(args: argparse.Namespace) -> int:
     """End-to-end smoke test: synthesize a tiny BAM, run the full pipeline,
     verify outputs. Confirms the install actually works.
@@ -629,14 +664,32 @@ def cmd_selftest(args: argparse.Namespace) -> int:
         for mode in modes:
             print(f"[selftest] running pipeline mode={mode}...")
             r = subprocess.run(  # noqa: S603
-                [sys.executable, "-m", "src.cli", "run",
-                 "--bam", str(bam), "--fasta", str(fa),
-                 "--out-dir", str(out_dir / mode),
-                 "--threads", "2", "--mode", mode,
-                 "--cpgs-per-bin", "2", "--min-coverage", "4",
-                 "--chroms", "chr_test"],
+                [
+                    sys.executable,
+                    "-m",
+                    "src.cli",
+                    "run",
+                    "--bam",
+                    str(bam),
+                    "--fasta",
+                    str(fa),
+                    "--out-dir",
+                    str(out_dir / mode),
+                    "--threads",
+                    "2",
+                    "--mode",
+                    mode,
+                    "--cpgs-per-bin",
+                    "2",
+                    "--min-coverage",
+                    "4",
+                    "--chroms",
+                    "chr_test",
+                ],
                 cwd=str(project_root),
-                capture_output=True, text=True, timeout=120,
+                capture_output=True,
+                text=True,
+                timeout=120,
             )
             if r.returncode != 0:
                 print(f"[FAIL] pipeline failed for mode={mode}")
@@ -657,39 +710,64 @@ def cmd_selftest(args: argparse.Namespace) -> int:
 
 # ─────────────────────────── parser ───────────────────────────────────────
 
+
 def _add_common_io(parser: argparse.ArgumentParser, *, want_tsv: bool = False) -> None:
-    parser.add_argument("--genome", default="hg38",
-                        choices=["hg38", "mm10"],
-                        help="Reference genome (default: hg38).")
-    parser.add_argument("--fasta", default=None,
-                        help="Custom FASTA (overrides --genome bundled FASTA).")
-    parser.add_argument("--threads", type=int, default=8,
-                        help="Threads / parallel workers (default: 8).")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-                        help="Increase verbosity (-v INFO, -vv DEBUG).")
+    parser.add_argument(
+        "--genome",
+        default="hg38",
+        choices=["hg38", "mm10"],
+        help="Reference genome (default: hg38).",
+    )
+    parser.add_argument(
+        "--fasta", default=None, help="Custom FASTA (overrides --genome bundled FASTA)."
+    )
+    parser.add_argument(
+        "--threads", type=int, default=8, help="Threads / parallel workers (default: 8)."
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Increase verbosity (-v INFO, -vv DEBUG).",
+    )
 
 
 def _add_entropy_params(p: argparse.ArgumentParser) -> None:
     p.add_argument(
-        "--mode", default=ENTROPY_MODE_TRUE_MC,
+        "--mode",
+        default=ENTROPY_MODE_TRUE_MC,
         choices=list(ENTROPY_MODES),
-        help="Entropy mode (default: true_mc). " + " | ".join(
-            f"{m}: {ENTROPY_MODE_HELP[m]}" for m in ENTROPY_MODES
-        ),
+        help="Entropy mode (default: true_mc). "
+        + " | ".join(f"{m}: {ENTROPY_MODE_HELP[m]}" for m in ENTROPY_MODES),
     )
-    p.add_argument("--cpgs-per-bin", type=int, default=4,
-                   dest="cpgs_per_bin",
-                   help="CpGs per bin k (default: 4).")
-    p.add_argument("--min-coverage", type=int, default=16,
-                   dest="min_coverage",
-                   help="Minimum reads per bin (default: 16).")
-    p.add_argument("--methyl-threshold", type=float, default=0.5,
-                   dest="methyl_threshold",
-                   help="Probability threshold for methylated call (default: 0.5).")
-    p.add_argument("--chroms", default="",
-                   help="Comma-separated chromosome list. Empty = all from FASTA.")
-    p.add_argument("--force", action="store_true",
-                   help="Force re-ingest of TSV (drops existing DuckDB table).")
+    p.add_argument(
+        "--cpgs-per-bin",
+        type=int,
+        default=4,
+        dest="cpgs_per_bin",
+        help="CpGs per bin k (default: 4).",
+    )
+    p.add_argument(
+        "--min-coverage",
+        type=int,
+        default=16,
+        dest="min_coverage",
+        help="Minimum reads per bin (default: 16).",
+    )
+    p.add_argument(
+        "--methyl-threshold",
+        type=float,
+        default=0.5,
+        dest="methyl_threshold",
+        help="Probability threshold for methylated call (default: 0.5).",
+    )
+    p.add_argument(
+        "--chroms", default="", help="Comma-separated chromosome list. Empty = all from FASTA."
+    )
+    p.add_argument(
+        "--force", action="store_true", help="Force re-ingest of TSV (drops existing DuckDB table)."
+    )
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -724,11 +802,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     grp = p_ex.add_mutually_exclusive_group(required=True)
     grp.add_argument("--bam", default=None, help="Input BAM file.")
-    grp.add_argument("--bam-folder", default=None, dest="bam_folder",
-                     help="Folder of BAMs (auto merge+sort+index).")
+    grp.add_argument(
+        "--bam-folder",
+        default=None,
+        dest="bam_folder",
+        help="Folder of BAMs (auto merge+sort+index).",
+    )
     p_ex.add_argument("out_tsv", help="Output TSV path.")
-    p_ex.add_argument("--log-file", default=None,
-                      help="Path for modkit log (default: alongside output TSV).")
+    p_ex.add_argument(
+        "--log-file", default=None, help="Path for modkit log (default: alongside output TSV)."
+    )
     _add_common_io(p_ex)
     p_ex.set_defaults(func=cmd_extract)
 
@@ -745,9 +828,12 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p_en.add_argument("tsv", help="modkit extract TSV (input).")
-    p_en.add_argument("out_prefix", help="Output prefix (writes <prefix>.{me,mml,coverage}.bedgraph).")
-    p_en.add_argument("--work-dir", default=None,
-                      help="Work directory (default: alongside out_prefix).")
+    p_en.add_argument(
+        "out_prefix", help="Output prefix (writes <prefix>.{me,mml,coverage}.bedgraph)."
+    )
+    p_en.add_argument(
+        "--work-dir", default=None, help="Work directory (default: alongside out_prefix)."
+    )
     _add_common_io(p_en)
     _add_entropy_params(p_en)
     p_en.set_defaults(func=cmd_entropy)
@@ -758,19 +844,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Bedgraphs → tracks / scatter / arch / landscape PNG.",
         description=(
             "Render one of four plot kinds from your bedgraphs:\n\n"
-            "  tracks     control & target MML/ME along a genomic window,\n"
-            "             optional gene panel from a GTF\n"
+            "  tracks     4-panel region plot — gene structure (exons +\n"
+            "             promoter + strand arrows), then smoothed ME, MML,\n"
+            "             and (optional) coverage. Bundled GTF auto-loads.\n"
             "  scatter    side-by-side ME and MML 2D-histograms\n"
             "             (control vs target)\n"
             "  arch       three-panel MML × ME density landscape with the\n"
             "             theoretical entropy arch\n"
-            "  landscape  paired-line scatter with direction arrows on a\n"
-            "             configurable bin filter"
+            "  landscape  paired-line scatter; bin counts (Δ ME ↑ / ↓)\n"
+            "             appear in a caption below, on a configurable\n"
+            "             two-AND-ed bin filter"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     p_pl.add_argument(
-        "kind", choices=["tracks", "scatter", "arch", "landscape"],
+        "kind",
+        choices=["tracks", "scatter", "arch", "landscape"],
     )
     p_pl.add_argument("out_path", help="Output PNG path.")
 
@@ -780,62 +869,99 @@ def build_parser() -> argparse.ArgumentParser:
     p_pl.add_argument("--target-mml", default=None)
     p_pl.add_argument("--target-me", default=None)
     # Coverage is optional and only consumed by `tracks` (4th panel).
-    p_pl.add_argument("--control-coverage", default=None,
-                      help="(tracks only) coverage bedgraph for control.")
-    p_pl.add_argument("--target-coverage", default=None,
-                      help="(tracks only) coverage bedgraph for target.")
+    p_pl.add_argument(
+        "--control-coverage", default=None, help="(tracks only) coverage bedgraph for control."
+    )
+    p_pl.add_argument(
+        "--target-coverage", default=None, help="(tracks only) coverage bedgraph for target."
+    )
 
     # Sample labels + colours (carried into all plots)
-    p_pl.add_argument("--label-a", default="Control",
-                      help="Label for sample A (control). Default: Control.")
-    p_pl.add_argument("--label-b", default="Target",
-                      help="Label for sample B (target). Default: Target.")
-    p_pl.add_argument("--color-a", default="#1f77b4",
-                      help="Colour for sample A (control). Default: #1f77b4.")
-    p_pl.add_argument("--color-b", default="#ff7f0e",
-                      help="Colour for sample B (target). Default: #ff7f0e.")
+    p_pl.add_argument(
+        "--label-a", default="Control", help="Label for sample A (control). Default: Control."
+    )
+    p_pl.add_argument(
+        "--label-b", default="Target", help="Label for sample B (target). Default: Target."
+    )
+    p_pl.add_argument(
+        "--color-a",
+        default=PALETTE_CONTROL,
+        help=f"Colour for sample A (control). Default: {PALETTE_CONTROL}.",
+    )
+    p_pl.add_argument(
+        "--color-b",
+        default=PALETTE_TARGET,
+        help=f"Colour for sample B (target). Default: {PALETTE_TARGET}.",
+    )
 
     # scatter / arch — log vs linear colour scale
     p_pl.add_argument(
-        "--log-scale", action=argparse.BooleanOptionalAction, default=True,
+        "--log-scale",
+        action=argparse.BooleanOptionalAction,
+        default=True,
         help="log10 colour scale (default). Use --no-log-scale for linear.",
     )
 
     # landscape (paired) — two AND-ed filters
     _filter_dims = ["off", "MML", "|dMML|", "ME", "|dME|"]
-    p_pl.add_argument("--filter-a-dim", default="|dMML|",
-                      choices=_filter_dims,
-                      help="Landscape filter A dimension (default: |dMML|).")
-    p_pl.add_argument("--filter-a-op", default="<", choices=["<", ">"],
-                      help="Landscape filter A op (default: <).")
-    p_pl.add_argument("--filter-a-value", type=float, default=0.1,
-                      help="Landscape filter A threshold (default: 0.1).")
-    p_pl.add_argument("--filter-b-dim", default="|dME|",
-                      choices=_filter_dims,
-                      help="Landscape filter B dimension (default: |dME|).")
-    p_pl.add_argument("--filter-b-op", default=">", choices=["<", ">"],
-                      help="Landscape filter B op (default: >).")
-    p_pl.add_argument("--filter-b-value", type=float, default=0.4,
-                      help="Landscape filter B threshold (default: 0.4).")
-    p_pl.add_argument("--max-lines", type=int, default=20_000,
-                      help="Max paired lines drawn (default: 20000).")
+    p_pl.add_argument(
+        "--filter-a-dim",
+        default="|dMML|",
+        choices=_filter_dims,
+        help="Landscape filter A dimension (default: |dMML|).",
+    )
+    p_pl.add_argument(
+        "--filter-a-op", default="<", choices=["<", ">"], help="Landscape filter A op (default: <)."
+    )
+    p_pl.add_argument(
+        "--filter-a-value",
+        type=float,
+        default=0.1,
+        help="Landscape filter A threshold (default: 0.1).",
+    )
+    p_pl.add_argument(
+        "--filter-b-dim",
+        default="|dME|",
+        choices=_filter_dims,
+        help="Landscape filter B dimension (default: |dME|).",
+    )
+    p_pl.add_argument(
+        "--filter-b-op", default=">", choices=["<", ">"], help="Landscape filter B op (default: >)."
+    )
+    p_pl.add_argument(
+        "--filter-b-value",
+        type=float,
+        default=0.4,
+        help="Landscape filter B threshold (default: 0.4).",
+    )
+    p_pl.add_argument(
+        "--max-lines", type=int, default=20_000, help="Max paired lines drawn (default: 20000)."
+    )
 
     # tracks specifics
     p_pl.add_argument(
-        "--gtf", default=None,
-        help="Override the bundled GTF (defaults to the GTF bundled for "
-             "--genome).",
+        "--gtf",
+        default=None,
+        help="Override the bundled GTF (defaults to the GTF bundled for " "--genome).",
     )
-    p_pl.add_argument("--genome", default="hg38",
-                      choices=["hg38", "mm10"],
-                      help="Genome key for the bundled GTF (default: hg38).")
+    p_pl.add_argument(
+        "--genome",
+        default="hg38",
+        choices=["hg38", "mm10"],
+        help="Genome key for the bundled GTF (default: hg38).",
+    )
     p_pl.add_argument("--chrom", default="")
     p_pl.add_argument("--start", type=int, default=0)
     p_pl.add_argument("--end", type=int, default=0)
-    p_pl.add_argument("--window", type=int, default=5,
-                      help="Smoothing window for ME / MML signals (default: 5 bins).")
-    p_pl.add_argument("--pad", type=int, default=2000,
-                      help="Padding around the region in bp (default: 2000).")
+    p_pl.add_argument(
+        "--window",
+        type=int,
+        default=5,
+        help="Smoothing window for ME / MML signals (default: 5 bins).",
+    )
+    p_pl.add_argument(
+        "--pad", type=int, default=2000, help="Padding around the region in bp (default: 2000)."
+    )
 
     p_pl.add_argument("-v", "--verbose", action="count", default=0)
     p_pl.set_defaults(func=cmd_plot)
@@ -862,29 +988,39 @@ def build_parser() -> argparse.ArgumentParser:
     )
     # single-sample inputs
     p_run.add_argument("--bam", default=None, help="Single-mode: one BAM.")
-    p_run.add_argument("--tsv", default=None,
-                       help="Single-mode: pre-computed modkit TSV.")
-    p_run.add_argument("--bam-folder", default=None, dest="bam_folder",
-                       help="Single-mode: folder of BAMs (merge+sort+index).")
-    p_run.add_argument("--label", default=None,
-                       help="Single-mode: label for output filenames "
-                            "(default: 'sample').")
+    p_run.add_argument("--tsv", default=None, help="Single-mode: pre-computed modkit TSV.")
+    p_run.add_argument(
+        "--bam-folder",
+        default=None,
+        dest="bam_folder",
+        help="Single-mode: folder of BAMs (merge+sort+index).",
+    )
+    p_run.add_argument(
+        "--label",
+        default=None,
+        help="Single-mode: label for output filenames " "(default: 'sample').",
+    )
     # pair-mode flag
-    p_run.add_argument("--pair", action="store_true",
-                       help="Pair mode: process control + target.")
+    p_run.add_argument("--pair", action="store_true", help="Pair mode: process control + target.")
     # pair-mode inputs
     p_run.add_argument("--control-bam", default=None, dest="control_bam")
     p_run.add_argument("--control-tsv", default=None, dest="control_tsv")
-    p_run.add_argument("--control-bam-folder", default=None,
-                       dest="control_bam_folder")
-    p_run.add_argument("--control-label", default=None, dest="control_label",
-                       help="Pair-mode control label (default: 'control').")
+    p_run.add_argument("--control-bam-folder", default=None, dest="control_bam_folder")
+    p_run.add_argument(
+        "--control-label",
+        default=None,
+        dest="control_label",
+        help="Pair-mode control label (default: 'control').",
+    )
     p_run.add_argument("--target-bam", default=None, dest="target_bam")
     p_run.add_argument("--target-tsv", default=None, dest="target_tsv")
-    p_run.add_argument("--target-bam-folder", default=None,
-                       dest="target_bam_folder")
-    p_run.add_argument("--target-label", default=None, dest="target_label",
-                       help="Pair-mode target label (default: 'target').")
+    p_run.add_argument("--target-bam-folder", default=None, dest="target_bam_folder")
+    p_run.add_argument(
+        "--target-label",
+        default=None,
+        dest="target_label",
+        help="Pair-mode target label (default: 'target').",
+    )
 
     p_run.add_argument("--out-dir", required=True, dest="out_dir")
     _add_common_io(p_run)
@@ -916,7 +1052,10 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p_pre.add_argument(
-        "genome", nargs="*", choices=["hg38", "mm10"], default=None,
+        "genome",
+        nargs="*",
+        choices=["hg38", "mm10"],
+        default=None,
         help="One or more genomes to prefetch (default: both).",
     )
     p_pre.add_argument("-v", "--verbose", action="count", default=0)
@@ -954,7 +1093,8 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     p_st.add_argument(
-        "--include-ternary", action="store_true",
+        "--include-ternary",
+        action="store_true",
         help="Also test the ternary mode (slower; needs more memory).",
     )
     p_st.add_argument("-v", "--verbose", action="count", default=0)
@@ -970,10 +1110,8 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if args.cmd == "run":
         if args.pair:
-            ctrl_specified = any([args.control_bam, args.control_tsv,
-                                  args.control_bam_folder])
-            tgt_specified = any([args.target_bam, args.target_tsv,
-                                 args.target_bam_folder])
+            ctrl_specified = any([args.control_bam, args.control_tsv, args.control_bam_folder])
+            tgt_specified = any([args.target_bam, args.target_tsv, args.target_bam_folder])
             if not (ctrl_specified and tgt_specified):
                 parser.error(
                     "`run --pair` requires both control and target inputs "
@@ -983,8 +1121,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             if not (args.bam or args.tsv or args.bam_folder):
                 parser.error(
-                    "`run` (single mode) requires one of "
-                    "--bam, --tsv, or --bam-folder."
+                    "`run` (single mode) requires one of " "--bam, --tsv, or --bam-folder."
                 )
 
     ensure_dirs()

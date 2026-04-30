@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 # ─── Public protocol ──────────────────────────────────────────────────────
 
+
 class Progress(AbstractContextManager):
     """Common interface; concrete subclasses implement these methods."""
 
@@ -35,6 +36,7 @@ class Progress(AbstractContextManager):
         progress-bar frames terminated by ``\\r``). Default: same as
         ``status`` — subclasses override for in-place updates."""
         self.status(msg)
+
     def update(self, fraction: float, msg: str = "") -> None: ...
     def close(self) -> None: ...
 
@@ -57,6 +59,7 @@ class Progress(AbstractContextManager):
 
 # ─── No-op ────────────────────────────────────────────────────────────────
 
+
 class NullProgress(Progress):
     def status(self, msg: str) -> None:
         logger.debug("%s", msg)
@@ -70,6 +73,7 @@ class NullProgress(Progress):
 
 # ─── tqdm (CLI) ───────────────────────────────────────────────────────────
 
+
 class CLIProgress(Progress):
     """tqdm-backed progress bar for the CLI.
 
@@ -82,7 +86,9 @@ class CLIProgress(Progress):
 
         self._label = label
         self._tqdm = tqdm(
-            total=100, desc=label, ncols=ncols,
+            total=100,
+            desc=label,
+            ncols=ncols,
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt}% {elapsed}",
             leave=True,
         )
@@ -124,6 +130,7 @@ class CLIProgress(Progress):
 
 
 # ─── Streamlit ────────────────────────────────────────────────────────────
+
 
 class StreamlitProgress(Progress):
     """Streamlit progress bar + status panel.
@@ -184,13 +191,16 @@ class StreamlitProgress(Progress):
 
 # ─── Backwards-compat helpers used by older modules ─────────────────────
 
+
 def status(label: str, expanded: bool = True):
     """Legacy wrapper around `st.status` kept for callers that don't need
     the full `StreamlitProgress` adapter."""
     import streamlit as st
+
     return st.status(label, expanded=expanded)
 
 
 def progress_bar(label: str = "Working...") -> object:
     import streamlit as st
+
     return st.progress(0.0, text=label)

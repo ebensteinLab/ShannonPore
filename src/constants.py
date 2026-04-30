@@ -12,8 +12,11 @@ DEFAULT_MODKIT_THREADS: Final[int] = 8
 DEFAULT_MODKIT_QUEUE_SIZE: Final[int] = 1000
 
 # ── Plot palette ─────────────────────────────────────────────────────────
-PALETTE_CONTROL: Final[str] = "#1f77b4"
-PALETTE_TARGET: Final[str] = "#ff7f0e"
+# Single source of truth for control vs target colours. Used by the
+# Graph Prep state factories, the plot defaults (scatter / tracks /
+# triple-landscape / paired-landscape), and the CLI `--color-a/-b` defaults.
+PALETTE_CONTROL: Final[str] = "#2980b9"
+PALETTE_TARGET: Final[str] = "#e67e22"
 PALETTE_MML: Final[str] = "#3498db"
 PALETTE_HMC: Final[str] = "#27ae60"
 PALETTE_C: Final[str] = "#bdc3c7"

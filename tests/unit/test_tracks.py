@@ -35,16 +35,22 @@ def test_plot_region_tracks_three_panels_no_coverage(tmp_path: Path) -> None:
     tgt_mml = tmp_path / "tgt.mml.bedgraph"
     tgt_me = tmp_path / "tgt.me.bedgraph"
     for p, floor in (
-        (ctrl_mml, 0.10), (ctrl_me, 0.40),
-        (tgt_mml, 0.30), (tgt_me, 0.60),
+        (ctrl_mml, 0.10),
+        (ctrl_me, 0.40),
+        (tgt_mml, 0.30),
+        (tgt_me, 0.60),
     ):
         _write_bedgraph(p, chrom=chrom, value_floor=floor)
 
     out = tmp_path / "tracks.png"
     plot_region_tracks(
-        chrom=chrom, start=200, end=2500,
-        control_mml=ctrl_mml, target_mml=tgt_mml,
-        control_me=ctrl_me, target_me=tgt_me,
+        chrom=chrom,
+        start=200,
+        end=2500,
+        control_mml=ctrl_mml,
+        target_mml=tgt_mml,
+        control_me=ctrl_me,
+        target_me=tgt_me,
         gtf_path=None,
         out_path=out,
     )
@@ -58,8 +64,7 @@ def test_plot_region_tracks_four_panels_with_coverage(tmp_path: Path) -> None:
     chrom = "chr1"
     paths = {
         name: tmp_path / f"{name}.bedgraph"
-        for name in ("ctrl_mml", "ctrl_me", "tgt_mml", "tgt_me",
-                     "ctrl_cov", "tgt_cov")
+        for name in ("ctrl_mml", "ctrl_me", "tgt_mml", "tgt_me", "ctrl_cov", "tgt_cov")
     }
     for name, p in paths.items():
         floor = 5.0 if "cov" in name else 0.2
@@ -67,9 +72,13 @@ def test_plot_region_tracks_four_panels_with_coverage(tmp_path: Path) -> None:
 
     out = tmp_path / "tracks_cov.png"
     plot_region_tracks(
-        chrom=chrom, start=200, end=2500,
-        control_mml=paths["ctrl_mml"], target_mml=paths["tgt_mml"],
-        control_me=paths["ctrl_me"], target_me=paths["tgt_me"],
+        chrom=chrom,
+        start=200,
+        end=2500,
+        control_mml=paths["ctrl_mml"],
+        target_mml=paths["tgt_mml"],
+        control_me=paths["ctrl_me"],
+        target_me=paths["tgt_me"],
         control_coverage=paths["ctrl_cov"],
         target_coverage=paths["tgt_cov"],
         gtf_path=None,
@@ -93,10 +102,14 @@ def test_plot_region_tracks_handles_no_overlapping_bins(tmp_path: Path) -> None:
     out = tmp_path / "tracks_empty.png"
     plot_region_tracks(
         chrom=chrom,
-        start=10_000_000, end=10_001_000,  # far outside the synthetic bins
-        control_mml=ctrl_mml, target_mml=tgt_mml,
-        control_me=ctrl_me, target_me=tgt_me,
-        gtf_path=None, pad_bp=0,
+        start=10_000_000,
+        end=10_001_000,  # far outside the synthetic bins
+        control_mml=ctrl_mml,
+        target_mml=tgt_mml,
+        control_me=ctrl_me,
+        target_me=tgt_me,
+        gtf_path=None,
+        pad_bp=0,
         out_path=out,
     )
     assert out.exists() and out.stat().st_size > 0

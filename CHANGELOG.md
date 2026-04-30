@@ -2,6 +2,62 @@
 
 ## Unreleased
 
+### Repo-wide coherence sweep (3 parallel reviewers)
+
+**Code coherence**
+- `src/cli.py` module docstring no longer lists removed `segment` /
+  `annotate` subcommands; surface the actual 9 (`extract`, `entropy`,
+  `plot`, `run`, `prefetch`, `doctor`, `selftest`, `guide`, `examples`).
+- `plot landscape` CLI help text dropped the stale "direction arrows"
+  claim; describes the caption-based bin counts (Δ ME ↑ / ↓) instead.
+- `plot tracks` CLI description updated to match the 4-panel layout.
+- Color palette centralized via `src.constants.PALETTE_CONTROL` /
+  `PALETTE_TARGET` (`#2980b9` / `#e67e22`). Single source of truth used
+  by `state.TrackPlot` defaults, `GraphPrepState` factories,
+  `tab_file_prep` widget initializers, `cli.py --color-{a,b}` defaults,
+  and `scatter.py` plot fn defaults. Old `#1f77b4` / `#ff7f0e` literals
+  removed everywhere.
+- `scatter.py` module docstring updated for the caption-based paired
+  landscape.
+
+**Docs drift**
+- `docs/INSTALL.md`: corrected the "FASTAs not downloaded by default"
+  claim (install.sh now downloads by default); reordered the section
+  to lead with the default behaviour, listed all four reference-data
+  paths (default, skip, single-genome, post-install prefetch), removed
+  the unsupported `hg19` from the bash-completion enum list.
+- `README.md`: flipped the reference-fetching narrative — install.sh
+  default is auto-download, lazy fetch is the always-on fallback,
+  `shannonpore prefetch` is the explicit pre-warm.
+- Deleted vestigial `.R-version` (R was removed in v4).
+
+**CI + packaging**
+- `.github/workflows/ci.yml` now runs `black --check src tests app.py`
+  alongside `ruff check`. CONTRIBUTING.md's claimed style policy is
+  finally enforced in CI.
+- Applied `black` over the whole codebase (33 files reformatted) so
+  the new check passes on day one.
+- `environment.yml` historical comment about `modkit=0.6.0` recipe
+  trimmed to the load-bearing fact (the bioconda recipe is
+  `ont-modkit`, the binary is `modkit`).
+- `streamlit-smoke.yml` already exercises `AppTest.from_file("app.py")`
+  — no change needed.
+
+**Dependency bumps (rolled in from Dependabot PR #9)**
+- `streamlit` 1.51.0 → 1.57.0
+- `duckdb` 1.4.3 → 1.5.2
+- `matplotlib` 3.8.4 → 3.10.9
+- `pyfaidx` 0.8.1.2 → 0.9.0.4
+- `pysam` 0.22.1 → 0.24.0
+- `plotly` 6.2.0 → 6.7.0
+- `tqdm` 4.67.1 → 4.67.3
+- `scipy` 1.11.4 → 1.15.3
+- `ruff` 0.7.4 → 0.15.12
+- `mypy` 1.13.0 → 1.20.2
+- Doctor's pinned-version map, environment.yml, requirements.txt, and
+  pyproject.toml all aligned. `pytest` (132/132), `ruff check`, and
+  `black --check` all pass on the bumped stack.
+
 ### Added — graph prep & references
 - **Region track plot** rewritten to a 4-panel layout: gene structure
   (exons, 1 kb promoter, strand arrows) → smoothed ME → smoothed MML →

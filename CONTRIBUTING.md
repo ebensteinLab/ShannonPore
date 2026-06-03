@@ -9,8 +9,8 @@ and how to submit changes.
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/uribertocchitau/shannonpore.git
-   cd shannonpore
+   git clone https://github.com/ebensteinLab/ShannonPore.git
+   cd ShannonPore
    ```
 
 2. **Install** the conda + Python + R environment:
@@ -133,11 +133,11 @@ agree on approach.
 ## Issues and questions
 
 - **Bug reports** and **feature requests:** open a
-  [GitHub Issue](https://github.com/uribertocchitau/shannonpore/issues).
+  [GitHub Issue](https://github.com/ebensteinLab/ShannonPore/issues).
   Include `shannonpore doctor` output, OS / Python / R versions, a minimal
   reproducer, and the expected vs. actual behavior.
 - **Questions, ideas, "how do I…":** use
-  [GitHub Discussions](https://github.com/uribertocchitau/shannonpore/discussions)
+  [GitHub Discussions](https://github.com/ebensteinLab/ShannonPore/discussions)
   rather than the issue tracker.
 
 ## Code review

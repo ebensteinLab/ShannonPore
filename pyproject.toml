@@ -56,10 +56,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/uribertocchitau/shannonpore"
-Repository = "https://github.com/uribertocchitau/shannonpore"
-Issues = "https://github.com/uribertocchitau/shannonpore/issues"
-Documentation = "https://github.com/uribertocchitau/shannonpore#readme"
+Homepage = "https://github.com/ebensteinLab/ShannonPore"
+Repository = "https://github.com/ebensteinLab/ShannonPore"
+Issues = "https://github.com/ebensteinLab/ShannonPore/issues"
+Documentation = "https://github.com/ebensteinLab/ShannonPore#readme"
 
 [project.scripts]
 shannonpore = "src.cli:main"

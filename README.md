@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://github.com/uribertocchitau/shannonpore">
+  <a href="https://github.com/ebensteinLab/ShannonPore">
     <img src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00"
          alt="shannonpore — methylation entropy from nanopore reads"
          width="100%">
@@ -15,8 +15,8 @@
 
 <p align="center">
 
-[![CI](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/ci.yml)
-[![Streamlit smoke](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/uribertocchitau/shannonpore/actions/workflows/streamlit-smoke.yml)
+[![CI](https://github.com/ebensteinLab/ShannonPore/actions/workflows/ci.yml/badge.svg)](https://github.com/ebensteinLab/ShannonPore/actions/workflows/ci.yml)
+[![Streamlit smoke](https://github.com/ebensteinLab/ShannonPore/actions/workflows/streamlit-smoke.yml/badge.svg)](https://github.com/ebensteinLab/ShannonPore/actions/workflows/streamlit-smoke.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-31012/)
 [![Streamlit 1.51](https://img.shields.io/badge/streamlit-1.51-ff4b4b.svg)](https://streamlit.io)
@@ -77,8 +77,8 @@ Requires conda/mamba/micromamba. The installer auto-bootstraps micromamba
 into `~/.local/bin` if none is present.
 
 ```bash
-git clone https://github.com/uribertocchitau/shannonpore.git
-cd shannonpore
+git clone https://github.com/ebensteinLab/ShannonPore.git
+cd ShannonPore
 bash install.sh
 ```
 

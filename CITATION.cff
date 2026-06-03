@@ -5,8 +5,8 @@ version: "0.1.0"
 date-released: "2026-04-29"
 type: software
 license: MIT
-repository-code: "https://github.com/uribertocchitau/shannonpore"
-url: "https://github.com/uribertocchitau/shannonpore"
+repository-code: "https://github.com/ebensteinLab/ShannonPore"
+url: "https://github.com/ebensteinLab/ShannonPore"
 abstract: >-
   shannonpore is a Streamlit GUI and CLI for nanopore methylation entropy
   analysis. It computes methylation entropy (ME), mean methylation level

@@ -8,7 +8,7 @@ reproduce the 2026 stack bit-for-bit.
 ## TL;DR
 
 ```bash
-git clone https://github.com/uribertocchitau/shannonpore.git && cd shannonpore
+git clone https://github.com/ebensteinLab/ShannonPore.git && cd ShannonPore
 bash install.sh
 shannonpore doctor      # auto-checks every dep + permission
 shannonpore selftest    # synthetic-BAM end-to-end smoke test

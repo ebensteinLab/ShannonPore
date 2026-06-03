@@ -783,7 +783,7 @@ def build_parser() -> argparse.ArgumentParser:
             "  shannonpore examples    cheat-sheet of common commands\n"
             "  shannonpore doctor      verify install\n"
             "  shannonpore selftest    end-to-end synthetic-BAM smoke test\n\n"
-            "Full docs: https://github.com/uribertocchitau/shannonpore#readme"
+            "Full docs: https://github.com/ebensteinLab/ShannonPore#readme"
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )

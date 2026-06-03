@@ -44,8 +44,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
     menu_items={
-        "Get Help": "https://github.com/uribertocchitau/shannonpore",
-        "Report a bug": "https://github.com/uribertocchitau/shannonpore/issues",
+        "Get Help": "https://github.com/ebensteinLab/ShannonPore",
+        "Report a bug": "https://github.com/ebensteinLab/ShannonPore/issues",
         "About": (
             f"**shannonpore v{__version__}**  \n"
             "Nanopore methylation entropy analysis.  \n"
@@ -118,9 +118,9 @@ def _sidebar() -> None:
                         padding-top:0.4rem;padding-bottom:1rem;">
               ebenstein lab<br/>
               tel aviv university<br/>
-              <a href="https://github.com/uribertocchitau/shannonpore"
+              <a href="https://github.com/ebensteinLab/ShannonPore"
                  style="color:#9a9a98;text-decoration:none;">
-                github.com/uribertocchitau/shannonpore
+                github.com/ebensteinLab/ShannonPore
               </a>
             </div>
             """,

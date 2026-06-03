@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/ebensteinLab/ShannonPore">
-    <img src="https://github.com/user-attachments/assets/12957920-fdb1-4bdf-b704-989ddac66d00"
+    <img src="https://github.com/ebensteinLab/ShannonPore/blob/main/Shannonpore.png"
          alt="shannonpore — methylation entropy from nanopore reads"
          width="100%">
   </a>

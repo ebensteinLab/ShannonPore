@@ -219,7 +219,7 @@ button on the right sidebar).
 
 ## License
 
-[MIT](LICENSE) © 2026 Uri Bertocchi, Ebenstein Lab, Tel Aviv University.
+[MIT](LICENSE) © 2026 Ebenstein Lab, Tel Aviv University.
 
 ## Acknowledgements
 

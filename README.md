@@ -210,6 +210,9 @@ progress bar with live status.
 The CLI surfaces a coverage warning when ternary's pattern-space exceeds
 your `--min-coverage`. The GUI does the same in Tab 1.
 
+**Defaults** (used whenever a flag is omitted): `--mode true_mc`,
+`--cpgs-per-bin 4`, `--min-coverage 16`.
+
 
 ## Citation
 

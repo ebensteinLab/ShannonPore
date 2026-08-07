@@ -21,7 +21,7 @@
 [![Python 3.10](https://img.shields.io/badge/python-3.10-blue.svg)](https://www.python.org/downloads/release/python-31012/)
 [![Streamlit 1.51](https://img.shields.io/badge/streamlit-1.51-ff4b4b.svg)](https://streamlit.io)
 [![modkit 0.6](https://img.shields.io/badge/modkit-0.6.0-orange.svg)](https://github.com/nanoporetech/modkit)
-[![DOI](https://img.shields.io/badge/cite-CITATION.cff-blue.svg)](CITATION.cff)
+[![DOI](https://zenodo.org/badge/1257304124.svg)](https://doi.org/10.5281/zenodo.21835446)
 
 </p>
 

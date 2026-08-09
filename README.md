@@ -22,6 +22,7 @@
 [![Streamlit 1.51](https://img.shields.io/badge/streamlit-1.51-ff4b4b.svg)](https://streamlit.io)
 [![modkit 0.6](https://img.shields.io/badge/modkit-0.6.0-orange.svg)](https://github.com/nanoporetech/modkit)
 [![DOI](https://zenodo.org/badge/1257304124.svg)](https://doi.org/10.5281/zenodo.21835446)
+[![preprint](https://img.shields.io/badge/bioRxiv-2026.07.08.736699-b31b1b.svg)](https://doi.org/10.64898/2026.07.08.736699)
 
 </p>
 
@@ -216,9 +217,33 @@ your `--min-coverage`. The GUI does the same in Tab 1.
 
 ## Citation
 
-If you use `shannonpore` in published work, please cite via the
-[`CITATION.cff`](CITATION.cff) file (GitHub renders a "Cite this repository"
-button on the right sidebar).
+**If you use `shannonpore` in published work, please cite our preprint:**
+
+> Bertocchi U, Katz E, Jeffet J, Grunwald A, Gabay N, Deek J, Verma S,
+> Shwartz A, Umschweif-Nevo G, Lerer B, Roichman Y, Ebenstein Y.
+> *Beyond Bisulfite Sequencing: Resolving 5-hmC with Nanopore Sequencing
+> Unmasks the True-5mC Methylation Entropy Landscape.*
+> bioRxiv (2026). doi:
+> [10.64898/2026.07.08.736699](https://doi.org/10.64898/2026.07.08.736699)
+
+```bibtex
+@article{Bertocchi2026shannonpore,
+  title     = {Beyond Bisulfite Sequencing: Resolving 5-hmC with Nanopore
+               Sequencing Unmasks the True-5mC Methylation Entropy Landscape},
+  author    = {Bertocchi, Uri and Katz, Eyal and Jeffet, Jonathan and
+               Grunwald, Assaf and Gabay, Neiv and Deek, Jasline and
+               Verma, Sujal and Shwartz, Amit and Umschweif-Nevo, Gali and
+               Lerer, Bernard and Roichman, Yael and Ebenstein, Yuval},
+  journal   = {bioRxiv},
+  year      = {2026},
+  doi       = {10.64898/2026.07.08.736699},
+  url       = {https://www.biorxiv.org/content/10.64898/2026.07.08.736699v1}
+}
+```
+
+[`CITATION.cff`](CITATION.cff) carries the same reference — GitHub's
+"Cite this repository" button and tools like Zotero pick it up
+automatically.
 
 ## License
 

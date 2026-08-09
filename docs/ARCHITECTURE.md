@@ -20,7 +20,8 @@
         │
         ├─► src/pipelines/  (orchestrator · modkit_runner · bam_utils ·
         │                    whole_genome_duckdb · ternary · roi_entropy)
-        ├─► src/plots/      (tracks · scatter [ME/MML + arch + paired] · theme)
+        ├─► src/plots/      (tracks · scatter [ME/MML + arch + paired] ·
+        │                    export [multi-format save] · theme)
         ├─► src/io/         (bedgraph · gtf_utils · roi_utils · utils_io)
         └─► src/ui/         (error_handler · progress · widgets · style)
 ```
@@ -40,7 +41,7 @@ of its compute path with the GUI — both call into `src/pipelines/*`.
 | `src/tabs/tab_graph_prep.py` | ~600 | samples · ME/MML scatter · arch · paired · region track |
 | `src/state.py` | ~150 | AppState dataclass + accessors |
 | `src/pipelines/*` | 6 modules | orchestrator + extract/merge + 3 entropy strategies |
-| `src/plots/*` | 3 modules | scatter (3 plot families) · tracks · theme |
+| `src/plots/*` | 4 modules | scatter (3 plot families) · tracks · export (png/jpg/svg/pdf + DPI) · theme |
 | `src/ui/style.py` | ~260 | CSS injection + header band |
 
 Plot logic is decoupled from Streamlit; every plot module is importable

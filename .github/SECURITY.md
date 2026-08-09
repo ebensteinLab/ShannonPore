@@ -43,7 +43,7 @@ If your report is time-sensitive, please say so explicitly in the email.
 
 In scope:
 
-- Code in this repository (`src/`, `app.py`, `tests/`, helper scripts)
+- Code in this repository (`shannonpore/`, `app.py`, `tests/`, helper scripts)
 - The packaged CLI (`shannonpore`) and the Streamlit GUI
 
 Out of scope:

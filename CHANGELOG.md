@@ -2,12 +2,22 @@
 
 ## Unreleased
 
+### Package rename: `src` → `shannonpore` (BREAKING for imports)
+
+- The top-level Python package is now `shannonpore` (was the generic
+  `src`, which collides with any other package that ships a `src`
+  module and blocks bioconda acceptance). All imports change
+  accordingly: `from shannonpore.plots.scatter import …`; the module
+  CLI is `python -m shannonpore.cli`. The installed `shannonpore`
+  console script, GUI, and all pipeline behaviour are unchanged.
+  Re-run `pip install -e .` in existing dev checkouts.
+
 ### Multi-format plot export + paired-landscape line toggle
 
 **Features**
 - Every plot (ME/MML scatter, arch landscape, paired landscape, region
   tracks) can now be exported as high-resolution **PNG / JPG / SVG /
-  PDF** in one render. New shared helper `src.plots.export.save_figure`
+  PDF** in one render. New shared helper `shannonpore.plots.export.save_figure`
   centralises saving: raster formats honour a configurable DPI
   (bounded 30–1200), JPG is flattened onto white at quality 95, and
   SVG/PDF are true vector output.

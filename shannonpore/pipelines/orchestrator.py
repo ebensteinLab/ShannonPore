@@ -24,14 +24,14 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from src.constants import ENTROPY_MODE_TERNARY
-from src.pipelines.bam_utils import find_bams, merge_sort_index_bams
-from src.pipelines.modkit_runner import run_modkit_extract_minimal
-from src.pipelines.ternary_entropy import (
+from shannonpore.constants import ENTROPY_MODE_TERNARY
+from shannonpore.pipelines.bam_utils import find_bams, merge_sort_index_bams
+from shannonpore.pipelines.modkit_runner import run_modkit_extract_minimal
+from shannonpore.pipelines.ternary_entropy import (
     required_coverage_for_k,
     run_whole_genome_ternary,
 )
-from src.pipelines.whole_genome_duckdb_pipeline import run_whole_genome_duckdb_only
+from shannonpore.pipelines.whole_genome_duckdb_pipeline import run_whole_genome_duckdb_only
 
 logger = logging.getLogger(__name__)
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
-from src.constants import PALETTE_CONTROL, PALETTE_TARGET
+from shannonpore.constants import PALETTE_CONTROL, PALETTE_TARGET
 
 
 @dataclass

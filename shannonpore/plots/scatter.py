@@ -35,9 +35,9 @@ import numpy as np
 import pandas as pd
 from matplotlib.collections import LineCollection
 
-from src.constants import PALETTE_CONTROL, PALETTE_TARGET
-from src.io.bedgraph import read_bedgraph
-from src.plots.export import save_figure
+from shannonpore.constants import PALETTE_CONTROL, PALETTE_TARGET
+from shannonpore.io.bedgraph import read_bedgraph
+from shannonpore.plots.export import save_figure
 
 FilterDim = Literal["MML", "|dMML|", "ME", "|dME|"]
 FilterOp = Literal["<", ">"]
@@ -132,7 +132,7 @@ def me_mml_scatter(
     and for ME. ``df`` must come from ``load_paired_bedgraphs``.
 
     ``formats`` / ``dpi`` control export — see
-    :func:`src.plots.export.save_figure`.
+    :func:`shannonpore.plots.export.save_figure`.
     """
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 

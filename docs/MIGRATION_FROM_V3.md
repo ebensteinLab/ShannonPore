@@ -29,9 +29,9 @@ v3 had no `requirements.txt`. v4 ships:
 ### 2. Code is modular
 
 - `app.py` shrunk from 7,450 lines to <200.
-- 2 tabs in `src/tabs/` (was 3 in v3).
-- Plotting in `src/plots/` (one file per plot family).
-- Pipelines in `src/pipelines/`.
+- 2 tabs in `shannonpore/tabs/` (was 3 in v3).
+- Plotting in `shannonpore/plots/` (one file per plot family).
+- Pipelines in `shannonpore/pipelines/`.
 
 ### 3. State is typed
 
@@ -51,7 +51,7 @@ traceback and surfaces a friendly message in the UI.
 | **Bisulfite** | 5hmC counted as 5mC (matches bisulfite seq). |
 | **Ternary** | 3 states (C/5mC/5hmC); requires ≥ 3<sup>k</sup>× coverage. |
 
-The ternary pipeline is `src/pipelines/ternary_entropy.py`, ported from
+The ternary pipeline is `shannonpore/pipelines/ternary_entropy.py`, ported from
 `5hmc_confound_analysis/analysis/ternary_entropy.py`.
 
 ### 6. CLI — `shannonpore` console script

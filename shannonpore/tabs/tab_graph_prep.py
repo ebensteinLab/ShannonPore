@@ -16,24 +16,24 @@ import logging
 import re
 from pathlib import Path
 
-from src.config import GENOMES, RESULTS_DIR, assets_for, ensure_genome_gtf
-from src.help_text import SEC_GP_REGION, SEC_GP_SAMPLES
-from src.io.gtf_utils import (
+from shannonpore.config import GENOMES, RESULTS_DIR, assets_for, ensure_genome_gtf
+from shannonpore.help_text import SEC_GP_REGION, SEC_GP_SAMPLES
+from shannonpore.io.gtf_utils import (
     find_gene_by_name,
     load_gene_structures,
     search_gene_names,
 )
-from src.io.utils_io import ensure_writable_dir
-from src.plots.scatter import (
+from shannonpore.io.utils_io import ensure_writable_dir
+from shannonpore.plots.scatter import (
     load_paired_bedgraphs,
     me_mml_scatter,
     paired_landscape,
     triple_landscape,
 )
-from src.plots.theme import apply_default_style
-from src.plots.tracks import plot_region_tracks
-from src.state import get_state, update_section
-from src.ui.error_handler import show_error
+from shannonpore.plots.theme import apply_default_style
+from shannonpore.plots.tracks import plot_region_tracks
+from shannonpore.state import get_state, update_section
+from shannonpore.ui.error_handler import show_error
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +115,7 @@ def _track_inputs(state, side: str) -> None:
         placeholder="/path/to/sample.coverage.bedgraph",
     )
 
-    from src.state import TrackPlot
+    from shannonpore.state import TrackPlot
 
     new_track = TrackPlot(
         name=name or cur.name,

@@ -4,24 +4,20 @@ Goal: `conda install -c bioconda shannonpore` installs the CLI **and**
 modkit + pysam in one step (something pip cannot do, since modkit is a
 Rust binary distributed on bioconda as `ont-modkit`).
 
-## One-time blocker to resolve first
+## Package naming (resolved)
 
-The package currently installs a top-level Python module named `src`
-(`[tool.setuptools.packages.find] include = ["src*"]`, entry point
-`src.cli:main`). Bioconda review will reject this: `import src` clashes
-with any other package that made the same mistake. Before submission,
-rename the package directory `src/` → `shannonpore/` and update:
-
-- all `from src.…` / `import src` statements (code + tests),
-- `[project.scripts] shannonpore = "shannonpore.cli:main"`,
-- `[tool.setuptools.packages.find] include = ["shannonpore*"]`,
-- `conda-recipe/meta.yaml` `entry_points`.
+The package previously installed a top-level Python module named `src`,
+which bioconda review would have rejected (`import src` clashes with
+any other package that made the same mistake). The package directory is
+now `shannonpore/` and the entry point is `shannonpore.cli:main` — no
+further action needed.
 
 ## Release checklist (per version)
 
 1. Merge outstanding feature PRs into `main`.
-2. Bump `version` in `pyproject.toml` and `src/__init__.py`; move the
-   `## Unreleased` CHANGELOG section under the new version heading.
+2. Bump `version` in `pyproject.toml` and `shannonpore/__init__.py`;
+   move the `## Unreleased` CHANGELOG section under the new version
+   heading.
 3. Tag and release:
    ```bash
    git tag -a v0.2.0 -m "shannonpore 0.2.0"

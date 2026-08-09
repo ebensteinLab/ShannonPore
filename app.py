@@ -1,8 +1,8 @@
 """shannonpore v4 — Streamlit entrypoint.
 
-Slim entrypoint. All feature logic lives in `src/tabs/`, all state in
-`src/state.py`, all plots in `src/plots/`, all pipelines in
-`src/pipelines/`.
+Slim entrypoint. All feature logic lives in `shannonpore/tabs/`, all state in
+`shannonpore/state.py`, all plots in `shannonpore/plots/`, all pipelines in
+`shannonpore/pipelines/`.
 
 Run with:
     streamlit run app.py
@@ -14,19 +14,19 @@ import logging
 import sys
 from pathlib import Path
 
-# Ensure project root is importable as `src.*` when run via `streamlit run app.py`.
+# Ensure project root is importable as `shannonpore.*` when run via `streamlit run app.py`.
 _THIS = Path(__file__).resolve().parent
 if str(_THIS) not in sys.path:
     sys.path.insert(0, str(_THIS))
 
 import streamlit as st  # noqa: E402
 
-from src import __version__  # noqa: E402
-from src.config import REFERENCE_DIR, RESULTS_DIR, ensure_dirs  # noqa: E402
-from src.constants import TAB_FILE_PREP, TAB_GRAPH_PREP  # noqa: E402
-from src.state import get_state, reset_state  # noqa: E402
-from src.tabs import tab_file_prep, tab_graph_prep  # noqa: E402
-from src.ui.style import header_band, inject  # noqa: E402
+from shannonpore import __version__  # noqa: E402
+from shannonpore.config import REFERENCE_DIR, RESULTS_DIR, ensure_dirs  # noqa: E402
+from shannonpore.constants import TAB_FILE_PREP, TAB_GRAPH_PREP  # noqa: E402
+from shannonpore.state import get_state, reset_state  # noqa: E402
+from shannonpore.tabs import tab_file_prep, tab_graph_prep  # noqa: E402
+from shannonpore.ui.style import header_band, inject  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,

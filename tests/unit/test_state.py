@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from src.state import (
+from shannonpore.state import (
     AppState,
     FilePrepState,
     GraphPrepState,
@@ -42,11 +42,11 @@ def test_replace_keeps_other_fields_unchanged() -> None:
 
 @pytest.mark.unit
 def test_track_plot_defaults() -> None:
-    from src.constants import PALETTE_CONTROL
+    from shannonpore.constants import PALETTE_CONTROL
 
     t = TrackPlot()
     # Default colour is the central palette entry, not a hard-coded hex,
-    # so a future palette change in src.constants flows through here.
+    # so a future palette change in shannonpore.constants flows through here.
     assert t.color == PALETTE_CONTROL
     assert t.mml_path is None and t.me_path is None and t.coverage_path is None
 

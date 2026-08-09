@@ -1,4 +1,4 @@
-"""Unit tests for `src/pipelines/bam_utils.py`."""
+"""Unit tests for `shannonpore/pipelines/bam_utils.py`."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from src.pipelines.bam_utils import find_bams
+from shannonpore.pipelines.bam_utils import find_bams
 
 
 @pytest.mark.unit
@@ -59,7 +59,7 @@ def test_find_bams_missing_folder_raises(tmp_path: Path) -> None:
 def test_merge_sort_index_single_bam(tmp_path: Path) -> None:
     """One BAM: no merge step, just sort+index."""
     pysam = pytest.importorskip("pysam")
-    from src.pipelines.bam_utils import merge_sort_index_bams
+    from shannonpore.pipelines.bam_utils import merge_sort_index_bams
 
     # Build a tiny BAM
     bam = tmp_path / "in.bam"

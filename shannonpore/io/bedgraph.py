@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from src.constants import BEDGRAPH_COLS
-from src.io.utils_io import safe_mkdir
+from shannonpore.constants import BEDGRAPH_COLS
+from shannonpore.io.utils_io import safe_mkdir
 
 
 def read_bedgraph(path: str | Path, chrom_filter: str | None = None) -> pd.DataFrame:

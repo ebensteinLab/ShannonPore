@@ -1,6 +1,6 @@
 # Session State Schema
 
-`src/state.py` defines the complete session state for the v4 Streamlit
+`shannonpore/state.py` defines the complete session state for the v4 Streamlit
 app. Every key is typed; reads/writes go through `get_state()` /
 `update_section()`. Streamlit's `session_state` dict holds one entry,
 `_app_state`, that points to an `AppState` instance.
@@ -76,7 +76,7 @@ app. Every key is typed; reads/writes go through `get_state()` /
 ## Invariants
 
 - All `Path` fields hold absolute or `~`-expanded paths.
-- `entropy_mode` is one of the values in `src.constants.ENTROPY_MODES`.
+- `entropy_mode` is one of the values in `shannonpore.constants.ENTROPY_MODES`.
 - `cpgs_per_bin >= 2`.
 - `region_end >= region_start`.
 

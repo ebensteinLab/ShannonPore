@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.ui.error_handler import show_error
+from shannonpore.ui.error_handler import show_error
 
 
 @pytest.mark.unit

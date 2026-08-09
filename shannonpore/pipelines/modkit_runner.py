@@ -7,7 +7,7 @@ import os
 import subprocess
 from collections.abc import Callable
 
-from src.io.utils_io import safe_mkdir, validate_existing_path
+from shannonpore.io.utils_io import safe_mkdir, validate_existing_path
 
 logger = logging.getLogger(__name__)
 

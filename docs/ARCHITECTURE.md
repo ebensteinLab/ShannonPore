@@ -11,37 +11,38 @@
         ┌───────────────────────┼───────────────────────────┐
         ▼                       ▼                           ▼
 ┌──────────────────┐   ┌──────────────────┐    ┌─────────────────────┐
-│ src/tabs/        │   │ src/state.py     │    │ src/config.py       │
+│ shannonpore/tabs/        │   │ shannonpore/state.py     │    │ shannonpore/config.py       │
 │ ├ tab_file_prep  │   │ AppState (DC)    │    │ env-resolved paths      │
 │ └ tab_graph_prep │   │ FilePrepState    │    │ SHANNONPORE_REF_DIR     │
 └──────────────────┘   │ GraphPrepState   │    │ SHANNONPORE_RESULTS_DIR │
         │              └──────────────────┘    │ HG38 / MM10 assets      │
         │                                      └─────────────────────────┘
         │
-        ├─► src/pipelines/  (orchestrator · modkit_runner · bam_utils ·
+        ├─► shannonpore/pipelines/  (orchestrator · modkit_runner · bam_utils ·
         │                    whole_genome_duckdb · ternary · roi_entropy)
-        ├─► src/plots/      (tracks · scatter [ME/MML + arch + paired] · theme)
-        ├─► src/io/         (bedgraph · gtf_utils · roi_utils · utils_io)
-        └─► src/ui/         (error_handler · progress · widgets · style)
+        ├─► shannonpore/plots/      (tracks · scatter [ME/MML + arch + paired] ·
+        │                    export [multi-format save] · theme)
+        ├─► shannonpore/io/         (bedgraph · gtf_utils · roi_utils · utils_io)
+        └─► shannonpore/ui/         (error_handler · progress · widgets · style)
 ```
 
-`src/cli.py` exposes the same pipelines as a Bash-friendly argparse CLI
+`shannonpore/cli.py` exposes the same pipelines as a Bash-friendly argparse CLI
 with subcommands `extract`, `entropy`, `plot`, `run`, `doctor`, `selftest`,
 plus `guide` and `examples` for inline documentation. The CLI shares 100%
-of its compute path with the GUI — both call into `src/pipelines/*`.
+of its compute path with the GUI — both call into `shannonpore/pipelines/*`.
 
 ## File budget
 
 | Layer | Lines | Notes |
 |---|---:|---|
 | `app.py` | <200 | page config, sidebar, tab dispatch, style injection |
-| `src/cli.py` | ~950 | argparse + 8 subcommands; the largest module |
-| `src/tabs/tab_file_prep.py` | ~450 | input + entropy-mode + bins + output |
-| `src/tabs/tab_graph_prep.py` | ~600 | samples · ME/MML scatter · arch · paired · region track |
-| `src/state.py` | ~150 | AppState dataclass + accessors |
-| `src/pipelines/*` | 6 modules | orchestrator + extract/merge + 3 entropy strategies |
-| `src/plots/*` | 3 modules | scatter (3 plot families) · tracks · theme |
-| `src/ui/style.py` | ~260 | CSS injection + header band |
+| `shannonpore/cli.py` | ~950 | argparse + 8 subcommands; the largest module |
+| `shannonpore/tabs/tab_file_prep.py` | ~450 | input + entropy-mode + bins + output |
+| `shannonpore/tabs/tab_graph_prep.py` | ~600 | samples · ME/MML scatter · arch · paired · region track |
+| `shannonpore/state.py` | ~150 | AppState dataclass + accessors |
+| `shannonpore/pipelines/*` | 6 modules | orchestrator + extract/merge + 3 entropy strategies |
+| `shannonpore/plots/*` | 4 modules | scatter (3 plot families) · tracks · export (png/jpg/svg/pdf + DPI) · theme |
+| `shannonpore/ui/style.py` | ~260 | CSS injection + header band |
 
 Plot logic is decoupled from Streamlit; every plot module is importable
 without a Streamlit context. The current outlier on size is `cli.py`,
@@ -49,7 +50,7 @@ which is mostly argparse boilerplate — splitting it is a tracked nice-to-have.
 
 ## Session state
 
-`src/state.py` defines `AppState` as a frozen-equivalent (mutated via
+`shannonpore/state.py` defines `AppState` as a frozen-equivalent (mutated via
 `dataclasses.replace`) dataclass. The Streamlit `session_state` holds a
 single key, `_app_state`, pointing to the current instance. Reads via
 `get_state()`, writes via `update_section('file_prep'|'graph_prep', …)`.
@@ -61,7 +62,7 @@ See [SESSION_STATE_SCHEMA.md](SESSION_STATE_SCHEMA.md) for the full schema.
 The GUI ships its own theme via:
 
 - `.streamlit/config.toml` — base palette (light, prussian primary).
-- `src/ui/style.py` — IBM Plex font stack, hairline rules, flat
+- `shannonpore/ui/style.py` — IBM Plex font stack, hairline rules, flat
   buttons, monospaced metrics, and a `shannonpore · v4 · GUI` band at
   the top. Hides Streamlit's MainMenu / footer chrome.
 
@@ -71,7 +72,7 @@ data is shown.
 
 ## Error handling
 
-`src/ui/error_handler.show_error` decorates every Streamlit callback
+`shannonpore/ui/error_handler.show_error` decorates every Streamlit callback
 that touches the filesystem or external binaries. It logs the full
 traceback (stdlib `logging`) and renders a friendly `st.error` plus a
 collapsible traceback expander.
@@ -84,8 +85,8 @@ collapsible traceback expander.
 | `bisulfite` | `WHERE mod_code IN ('m','h')` + SUM | 5hmC counted as 5mC. |
 | `ternary` | pivots m/h, assigns state ∈ {0,1,2} | 3-state entropy normalised by k·log2(3). Requires ≥ 3^k coverage. Emits extra `mhml` bedgraph. |
 
-Ternary uses `src/pipelines/ternary_entropy.py`; the 2-state modes share
-`src/pipelines/whole_genome_duckdb_pipeline.py`.
+Ternary uses `shannonpore/pipelines/ternary_entropy.py`; the 2-state modes share
+`shannonpore/pipelines/whole_genome_duckdb_pipeline.py`.
 
 ## Reference data
 

@@ -15,14 +15,14 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from src.config import (
+from shannonpore.config import (
     GENOMES,
     RESULTS_DIR,
     assets_for,
     ensure_dirs,
     ensure_genome_fasta,
 )
-from src.constants import (
+from shannonpore.constants import (
     ENTROPY_MODE_HELP,
     ENTROPY_MODE_LABELS,
     ENTROPY_MODE_TERNARY,
@@ -30,7 +30,7 @@ from src.constants import (
     PALETTE_CONTROL,
     PALETTE_TARGET,
 )
-from src.help_text import (
+from shannonpore.help_text import (
     GUI_GETTING_STARTED,
     GUI_GLOSSARY,
     GUI_HELP_INPUT_KIND,
@@ -44,12 +44,12 @@ from src.help_text import (
     SEC_FP_REFERENCE,
     SEC_FP_SAMPLES,
 )
-from src.io.utils_io import disk_free_gb, ensure_writable_dir
-from src.pipelines.orchestrator import run_pipeline
-from src.pipelines.ternary_entropy import required_coverage_for_k
-from src.state import SampleSpec, TrackPlot, get_state, update_section
-from src.ui.error_handler import show_error
-from src.ui.progress import StreamlitProgress
+from shannonpore.io.utils_io import disk_free_gb, ensure_writable_dir
+from shannonpore.pipelines.orchestrator import run_pipeline
+from shannonpore.pipelines.ternary_entropy import required_coverage_for_k
+from shannonpore.state import SampleSpec, TrackPlot, get_state, update_section
+from shannonpore.ui.error_handler import show_error
+from shannonpore.ui.progress import StreamlitProgress
 
 logger = logging.getLogger(__name__)
 
@@ -114,7 +114,7 @@ def _sample_inputs(
         new.bam_folder = Path(folder) if folder else None
         if folder and Path(folder).is_dir():
             try:
-                from src.pipelines.bam_utils import find_bams
+                from shannonpore.pipelines.bam_utils import find_bams
 
                 found = find_bams(folder)
                 st.markdown(

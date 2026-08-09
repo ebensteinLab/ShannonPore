@@ -22,14 +22,14 @@ import numpy as np
 import pandas as pd
 from scipy.ndimage import uniform_filter1d
 
-from src.io.bedgraph import read_bedgraph
-from src.io.gtf_utils import (
+from shannonpore.io.bedgraph import read_bedgraph
+from shannonpore.io.gtf_utils import (
     GeneStructure,
     get_gene_structures_for_region,
     load_gene_structures,
 )
-from src.io.utils_io import safe_mkdir
-from src.plots.export import save_figure
+from shannonpore.io.utils_io import safe_mkdir
+from shannonpore.plots.export import save_figure
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +283,7 @@ def plot_region_tracks(
     fits comfortably without flush-cutting promoters / exons.
 
     ``formats`` / ``dpi`` control export (see
-    :func:`src.plots.export.save_figure`); the returned path is the
+    :func:`shannonpore.plots.export.save_figure`); the returned path is the
     first written file.
     """
     safe_mkdir(os.path.dirname(str(out_path)))

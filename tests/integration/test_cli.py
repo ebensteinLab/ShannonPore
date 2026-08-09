@@ -1,6 +1,6 @@
 """Integration tests for the shannonpore CLI.
 
-Invokes ``python -m src.cli`` (rather than the installed `shannonpore`
+Invokes ``python -m shannonpore.cli`` (rather than the installed `shannonpore`
 script) so the tests pass without `pip install -e .` having been run.
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from src import __version__
+from shannonpore import __version__
 
 V4_DIR = Path(__file__).resolve().parents[2]
 
@@ -30,7 +30,7 @@ SUBCOMMANDS = (
 
 def _run(*args: str, expect_exit: int = 0, **kw) -> subprocess.CompletedProcess:
     proc = subprocess.run(
-        [sys.executable, "-m", "src.cli", *args],
+        [sys.executable, "-m", "shannonpore.cli", *args],
         cwd=str(V4_DIR),
         capture_output=True,
         text=True,
@@ -239,6 +239,6 @@ def test_plot_rejects_out_of_range_dpi(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 def test_formats_arg_dedupes_aliases() -> None:
-    from src.cli import _formats_arg
+    from shannonpore.cli import _formats_arg
 
     assert _formats_arg("jpg,jpeg,png") == ["jpg", "png"]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.constants import (
+from shannonpore.constants import (
     ENTROPY_MODE_BISULFITE,
     ENTROPY_MODE_HELP,
     ENTROPY_MODE_LABELS,
@@ -12,9 +12,9 @@ from src.constants import (
     ENTROPY_MODE_TRUE_MC,
     ENTROPY_MODES,
 )
-from src.pipelines.ternary_entropy import required_coverage_for_k
-from src.pipelines.whole_genome_duckdb_pipeline import stage_a_build_duckdb_table
-from src.state import FilePrepState
+from shannonpore.pipelines.ternary_entropy import required_coverage_for_k
+from shannonpore.pipelines.whole_genome_duckdb_pipeline import stage_a_build_duckdb_table
+from shannonpore.state import FilePrepState
 
 
 @pytest.mark.unit

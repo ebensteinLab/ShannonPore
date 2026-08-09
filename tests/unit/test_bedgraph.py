@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.io.bedgraph import read_bedgraph, smooth_bedgraph, write_bedgraph
+from shannonpore.io.bedgraph import read_bedgraph, smooth_bedgraph, write_bedgraph
 
 
 @pytest.mark.unit

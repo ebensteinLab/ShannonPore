@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from src.plots.tracks import plot_region_tracks
+from shannonpore.plots.tracks import plot_region_tracks
 
 
 def _write_bedgraph(p: Path, *, chrom: str, value_floor: float) -> None:

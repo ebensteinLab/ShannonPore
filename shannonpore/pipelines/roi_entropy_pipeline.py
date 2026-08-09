@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from pyfaidx import Fasta
 
-from src.io.utils_io import safe_mkdir
+from shannonpore.io.utils_io import safe_mkdir
 
 logger = logging.getLogger(__name__)
 

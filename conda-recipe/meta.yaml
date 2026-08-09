@@ -1,0 +1,74 @@
+{% set name = "shannonpore" %}
+{% set version = "0.2.0" %}
+
+# Staging copy of the bioconda recipe. The submitted version lives in
+# bioconda/bioconda-recipes under recipes/shannonpore/meta.yaml — keep
+# the two in sync. sha256 is computed from the GitHub release tarball:
+#   curl -sL https://github.com/ebensteinLab/ShannonPore/archive/refs/tags/v{{ version }}.tar.gz | sha256sum
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/ebensteinLab/ShannonPore/archive/refs/tags/v{{ version }}.tar.gz
+  sha256: FILL_ME_AFTER_TAGGING_v{{ version }}
+
+build:
+  noarch: python
+  number: 0
+  entry_points:
+    - shannonpore = shannonpore.cli:main
+  script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
+  run_exports:
+    - {{ pin_subpackage('shannonpore', max_pin='x.x') }}
+
+requirements:
+  host:
+    - python >=3.10,<3.11
+    - pip
+    - setuptools >=68
+    - wheel
+  run:
+    - python >=3.10,<3.11
+    - streamlit >=1.51
+    - pandas >=2.2
+    - numpy >=1.26,<2
+    - python-duckdb >=1.5
+    - matplotlib-base >=3.8
+    - seaborn >=0.13
+    - pyfaidx >=0.8
+    - pysam >=0.22
+    - plotly >=6
+    - tqdm >=4.66
+    - scipy >=1.11
+    # modkit is required at runtime for `extract` / `run`; conda is the
+    # only package manager that can co-install it with the Python stack.
+    - ont-modkit >=0.5
+
+test:
+  commands:
+    - shannonpore --version
+    - shannonpore --help
+    - shannonpore plot --help
+
+about:
+  home: https://github.com/ebensteinLab/ShannonPore
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Per-CpG methylation entropy (ME), MML, and coverage from nanopore reads
+  description: |
+    shannonpore turns a nanopore BAM with methylation tags (MM/ML) into
+    per-CpG entropy bedgraphs to plot, segment, and compare across
+    samples. Three 5hmC modes (true-mC, bisulfite-equivalent, ternary),
+    a whole-genome DuckDB pipeline, and publication-ready comparison
+    plots (multi-format PNG/JPG/SVG/PDF export). Installs the
+    `shannonpore` CLI; the Streamlit GUI is available from the source
+    repository.
+  doc_url: https://github.com/ebensteinLab/ShannonPore#readme
+  dev_url: https://github.com/ebensteinLab/ShannonPore
+
+extra:
+  recipe-maintainers:
+    - uribertocchitau

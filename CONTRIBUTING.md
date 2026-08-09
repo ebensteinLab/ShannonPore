@@ -63,8 +63,8 @@ We follow a standard fork-and-pull-request workflow:
 Run the formatter and linter before committing:
 
 ```bash
-black src tests
-ruff check src tests
+black shannonpore tests
+ruff check shannonpore tests
 ```
 
 ## Testing requirements
@@ -72,7 +72,7 @@ ruff check src tests
 Every new feature **must** include tests. Bug fixes **must** include a
 regression test that fails before the fix and passes after.
 
-- **Coverage targets:** 80%+ on `src/pipelines/`, `src/plots/`, `src/io/`.
+- **Coverage targets:** 80%+ on `shannonpore/pipelines/`, `shannonpore/plots/`, `shannonpore/io/`.
 - **Test runner:**
 
   ```bash
@@ -89,7 +89,7 @@ regression test that fails before the fix and passes after.
 - **Coverage report:**
 
   ```bash
-  pytest --cov=src --cov-report=term-missing
+  pytest --cov=shannonpore --cov-report=term-missing
   ```
 
 ## Commit messages
@@ -119,8 +119,8 @@ A PR is ready to merge when **all** of the following hold:
 - [ ] All tests pass: `pytest -v -p no:anyio`
 - [ ] `shannonpore doctor` runs clean
 - [ ] `shannonpore selftest` runs clean
-- [ ] `ruff check src tests` is clean
-- [ ] `black --check src tests` is clean
+- [ ] `ruff check shannonpore tests` is clean
+- [ ] `black --check shannonpore tests` is clean
 - [ ] No merge conflicts with `main`
 - [ ] PR description explains the **why** (motivation), not just the
       **what** (diff)

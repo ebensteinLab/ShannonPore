@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.io.roi_utils import parse_roi_file_flexible, parse_roi_text_area
+from shannonpore.io.roi_utils import parse_roi_file_flexible, parse_roi_text_area
 
 
 @pytest.mark.unit

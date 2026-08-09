@@ -1,4 +1,4 @@
-"""Unit tests for the comparison plots in src.plots.scatter.
+"""Unit tests for the comparison plots in shannonpore.plots.scatter.
 
 Renders are exercised on synthetic DataFrames; we don't compare pixels,
 just sanity-check the figure shape and that "fallback" code paths don't
@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src.plots.scatter import (
+from shannonpore.plots.scatter import (
     me_mml_scatter,
     paired_landscape,
     theoretical_entropy_binary,

@@ -24,7 +24,7 @@ the GUI exposes.
 
 Entry point
 -----------
-After ``pip install -e .`` (or ``python -m src.cli ...``) the CLI is
+After ``pip install -e .`` (or ``python -m shannonpore.cli ...``) the CLI is
 available as ``shannonpore`` thanks to the ``[project.scripts]`` entry
 in ``pyproject.toml``.
 """
@@ -39,8 +39,8 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from src import __version__
-from src.config import (
+from shannonpore import __version__
+from shannonpore.config import (
     REFERENCE_DIR,
     RESULTS_DIR,
     assets_for,
@@ -48,7 +48,7 @@ from src.config import (
     ensure_genome_fasta,
     ensure_genome_gtf,
 )
-from src.constants import (
+from shannonpore.constants import (
     ENTROPY_MODE_BISULFITE,
     ENTROPY_MODE_HELP,
     ENTROPY_MODE_TERNARY,
@@ -102,9 +102,9 @@ def _print_progress(msg: str) -> None:
 
 
 def cmd_extract(args: argparse.Namespace) -> int:
-    from src.pipelines.bam_utils import find_bams, merge_sort_index_bams
-    from src.pipelines.modkit_runner import run_modkit_extract_minimal
-    from src.ui.progress import CLIProgress
+    from shannonpore.pipelines.bam_utils import find_bams, merge_sort_index_bams
+    from shannonpore.pipelines.modkit_runner import run_modkit_extract_minimal
+    from shannonpore.ui.progress import CLIProgress
 
     fasta = _resolve_fasta(args.genome, args.fasta)
     out_tsv = Path(args.out_tsv).expanduser().resolve()
@@ -146,7 +146,7 @@ def cmd_extract(args: argparse.Namespace) -> int:
 
 
 def cmd_entropy(args: argparse.Namespace) -> int:
-    from src.ui.progress import CLIProgress
+    from shannonpore.ui.progress import CLIProgress
 
     fasta = _resolve_fasta(args.genome, args.fasta)
     out_prefix = Path(args.out_prefix).expanduser().resolve()
@@ -160,7 +160,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 
     with CLIProgress(f"entropy · {args.mode}") as bar:
         if args.mode == ENTROPY_MODE_TERNARY:
-            from src.pipelines.ternary_entropy import (
+            from shannonpore.pipelines.ternary_entropy import (
                 required_coverage_for_k,
                 run_whole_genome_ternary,
             )
@@ -186,7 +186,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
                 pct_cb=bar.update,
             )
         else:
-            from src.pipelines.whole_genome_duckdb_pipeline import (
+            from shannonpore.pipelines.whole_genome_duckdb_pipeline import (
                 run_whole_genome_duckdb_only,
             )
 
@@ -215,7 +215,7 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 def _formats_arg(value: str) -> list[str]:
     """argparse type for ``--formats``: comma-separated list validated
     against the supported export formats (png / jpg / svg / pdf)."""
-    from src.plots.export import normalise_format
+    from shannonpore.plots.export import normalise_format
 
     try:
         formats = [normalise_format(v) for v in value.split(",") if v.strip()]
@@ -229,7 +229,7 @@ def _formats_arg(value: str) -> list[str]:
 def _dpi_arg(value: str) -> int:
     """argparse type for ``--dpi``: bounded int so a typo can't ask
     matplotlib for a multi-gigabyte raster buffer."""
-    from src.plots.export import MAX_DPI, MIN_DPI
+    from shannonpore.plots.export import MAX_DPI, MIN_DPI
 
     try:
         dpi = int(value)
@@ -241,14 +241,14 @@ def _dpi_arg(value: str) -> int:
 
 
 def cmd_plot(args: argparse.Namespace) -> int:
-    from src.plots.scatter import (
+    from shannonpore.plots.scatter import (
         load_paired_bedgraphs,
         me_mml_scatter,
         paired_landscape,
         triple_landscape,
     )
-    from src.plots.theme import apply_default_style
-    from src.plots.tracks import plot_region_tracks
+    from shannonpore.plots.theme import apply_default_style
+    from shannonpore.plots.tracks import plot_region_tracks
 
     apply_default_style()
     out_path = Path(args.out_path).expanduser().resolve()
@@ -371,7 +371,7 @@ def cmd_plot(args: argparse.Namespace) -> int:
 def _spec_from_args(args, prefix: str, default_label: str):
     """Build a SampleSpec from CLI flags. `prefix` is "" for single mode,
     "control_" or "target_" in pair mode."""
-    from src.state import SampleSpec
+    from shannonpore.state import SampleSpec
 
     bam = getattr(args, f"{prefix}bam", None)
     tsv = getattr(args, f"{prefix}tsv", None)
@@ -406,8 +406,8 @@ def cmd_run(args: argparse.Namespace) -> int:
         pair mode (--pair):    --control-{bam,tsv,bam-folder}
                                --target-{bam,tsv,bam-folder}
     """
-    from src.pipelines.orchestrator import run_pipeline
-    from src.ui.progress import CLIProgress
+    from shannonpore.pipelines.orchestrator import run_pipeline
+    from shannonpore.ui.progress import CLIProgress
 
     out_dir = Path(args.out_dir).expanduser().resolve()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -507,14 +507,14 @@ def cmd_prefetch(args: argparse.Namespace) -> int:
 
 
 def cmd_guide(args: argparse.Namespace) -> int:
-    from src.help_text import GUIDE
+    from shannonpore.help_text import GUIDE
 
     print(GUIDE)
     return 0
 
 
 def cmd_examples(args: argparse.Namespace) -> int:
-    from src.help_text import EXAMPLES
+    from shannonpore.help_text import EXAMPLES
 
     print(EXAMPLES)
     return 0
@@ -597,7 +597,7 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             check(binary, expected, False, str(exc))
 
     # ── Reference dir + per-genome FASTAs ──
-    from src.config import reference_status
+    from shannonpore.config import reference_status
 
     ensure_dirs()  # creates REFERENCE_DIR if missing
     check("REFERENCE_DIR", "exists", REFERENCE_DIR.exists(), str(REFERENCE_DIR))
@@ -711,7 +711,7 @@ def cmd_selftest(args: argparse.Namespace) -> int:
                 [
                     sys.executable,
                     "-m",
-                    "src.cli",
+                    "shannonpore.cli",
                     "run",
                     "--bam",
                     str(bam),

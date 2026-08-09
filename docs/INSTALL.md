@@ -175,5 +175,5 @@ shannonpore doctor                       # something broke after install
 shannonpore selftest --include-ternary   # exercise full pipeline
 streamlit run app.py 2>&1 | tee app.log  # GUI crashes
 which shannonpore                        # confirm console script on PATH
-python -m src.cli --help                 # equivalent direct invocation
+python -m shannonpore.cli --help                 # equivalent direct invocation
 ```

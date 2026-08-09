@@ -167,6 +167,12 @@ shannonpore plot arch      arch.png      --control-mml ...               --contr
 shannonpore plot landscape paired.png    --control-mml ...               --control-me ...              --target-mml ...              --target-me ...               --filter-a-dim '|dMML|' --filter-a-op '<' --filter-a-value 0.1 --filter-b-dim '|dME|' --filter-b-op '>' --filter-b-value 0.4
 shannonpore plot tracks    tracks.png    --control-mml ...               --control-me ...              --target-mml ...              --target-me ...               --control-coverage ctrl.coverage.bedgraph --target-coverage tgt.coverage.bedgraph --genome hg38 --chrom chr3 --start 10141778 --end 10153676
 
+# Export options (all plot kinds): one file per format, DPI 30–1200
+# for raster output. SVG / PDF are vector (resolution-independent).
+shannonpore plot arch      arch.png      --formats png,svg,pdf --dpi 600 --control-mml ... --control-me ... --target-mml ... --target-me ...
+# Paired landscape without the black control → target connecting lines:
+shannonpore plot landscape paired.png    --no-lines            --control-mml ... --control-me ... --target-mml ... --target-me ...
+
 # Verify install / debug
 shannonpore doctor
 shannonpore selftest --include-ternary
@@ -193,6 +199,11 @@ Two tabs:
   are auto-populated from the last File Prep run. The track section
   loads the bundled hg38 / mm10 RefSeq GTF on first use and lets you
   search by gene name to auto-fill `chrom / start / end`.
+  An **export settings** row at the top applies to every plot: pick
+  one or more formats (PNG / JPG rasterised at the chosen DPI, or
+  vector SVG / PDF) and each render saves them all. The paired
+  landscape has a **connecting lines** toggle to hide the black
+  control → target lines and keep only the per-sample dots.
 
 Both tabs ship inline `📖 How to use this tab` panels (auto-expanded
 for first-time users), contextual `?` tooltips, and a glossary

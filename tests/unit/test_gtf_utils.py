@@ -5,7 +5,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from src.io.gtf_utils import (
+from shannonpore.io.gtf_utils import (
     GeneStructure,
     find_gene_by_name,
     get_gene_structures_for_region,

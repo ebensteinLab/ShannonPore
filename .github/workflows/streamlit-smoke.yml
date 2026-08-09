@@ -3,9 +3,9 @@ name: Streamlit smoke tests
 on:
   pull_request:
     paths:
-      - "src/tabs/**"
+      - "shannonpore/tabs/**"
       - "app.py"
-      - "src/state.py"
+      - "shannonpore/state.py"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

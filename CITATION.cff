@@ -32,3 +32,40 @@ keywords:
   - 5mC
   - modkit
   - streamlit
+preferred-citation:
+  type: article
+  title: >-
+    Beyond Bisulfite Sequencing: Resolving 5-hmC with Nanopore Sequencing
+    Unmasks the True-5mC Methylation Entropy Landscape
+  authors:
+    - family-names: Bertocchi
+      given-names: Uri
+      affiliation: "Tel Aviv University"
+    - family-names: Katz
+      given-names: Eyal
+    - family-names: Jeffet
+      given-names: Jonathan
+    - family-names: Grunwald
+      given-names: Assaf
+    - family-names: Gabay
+      given-names: Neiv
+    - family-names: Deek
+      given-names: Jasline
+    - family-names: Verma
+      given-names: Sujal
+    - family-names: Shwartz
+      given-names: Amit
+    - family-names: Umschweif-Nevo
+      given-names: Gali
+    - family-names: Lerer
+      given-names: Bernard
+    - family-names: Roichman
+      given-names: Yael
+    - family-names: Ebenstein
+      given-names: Yuval
+      affiliation: "Tel Aviv University"
+  journal: bioRxiv
+  year: 2026
+  month: 7
+  doi: "10.64898/2026.07.08.736699"
+  url: "https://www.biorxiv.org/content/10.64898/2026.07.08.736699v1"

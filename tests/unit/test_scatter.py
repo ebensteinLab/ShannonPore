@@ -119,6 +119,92 @@ def test_paired_landscape_no_bins_pass_filter() -> None:
     plt.close(fig)
 
 
+def _n_line_collections(fig) -> int:
+    from matplotlib.collections import LineCollection
+
+    return sum(isinstance(c, LineCollection) for ax in fig.axes for c in ax.collections)
+
+
+@pytest.mark.unit
+def test_paired_landscape_draws_connecting_lines_by_default(paired_df) -> None:
+    fig = paired_landscape(
+        paired_df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim=None,
+        filter_b_dim=None,
+    )
+    assert _n_line_collections(fig) == 1
+    plt.close(fig)
+
+
+@pytest.mark.unit
+def test_paired_landscape_show_lines_false_omits_lines(paired_df) -> None:
+    fig = paired_landscape(
+        paired_df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim=None,
+        filter_b_dim=None,
+        show_lines=False,
+    )
+    assert _n_line_collections(fig) == 0
+    # The two per-sample scatters must still be drawn.
+    n_scatters = sum(len(ax.collections) for ax in fig.axes)
+    assert n_scatters == 2
+    plt.close(fig)
+
+
+@pytest.mark.unit
+def test_paired_landscape_multi_format_export(paired_df, tmp_path) -> None:
+    out = tmp_path / "paired.png"
+    fig = paired_landscape(
+        paired_df,
+        label_a="A",
+        label_b="B",
+        filter_a_dim=None,
+        filter_b_dim=None,
+        out_path=out,
+        formats=("png", "svg", "pdf"),
+        dpi=100,
+    )
+    assert (tmp_path / "paired.png").exists()
+    assert (tmp_path / "paired.svg").exists()
+    assert (tmp_path / "paired.pdf").exists()
+    plt.close(fig)
+
+
+@pytest.mark.unit
+def test_me_mml_scatter_multi_format_export(paired_df, tmp_path) -> None:
+    out = tmp_path / "scatter.png"
+    fig = me_mml_scatter(
+        paired_df,
+        label_a="A",
+        label_b="B",
+        out_path=out,
+        formats=("jpg", "pdf"),
+        dpi=100,
+    )
+    assert (tmp_path / "scatter.jpg").exists()
+    assert (tmp_path / "scatter.pdf").exists()
+    plt.close(fig)
+
+
+@pytest.mark.unit
+def test_triple_landscape_multi_format_export(paired_df, tmp_path) -> None:
+    out = tmp_path / "arch.png"
+    fig = triple_landscape(
+        paired_df,
+        label_a="A",
+        label_b="B",
+        out_path=out,
+        formats=("svg",),
+        dpi=100,
+    )
+    assert (tmp_path / "arch.svg").exists()
+    plt.close(fig)
+
+
 @pytest.mark.unit
 def test_paired_landscape_subsamples_when_over_max(paired_df) -> None:
     """max_lines smaller than n_bins must keep counts on full set but

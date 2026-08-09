@@ -88,6 +88,38 @@ def test_plot_region_tracks_four_panels_with_coverage(tmp_path: Path) -> None:
 
 
 @pytest.mark.unit
+def test_plot_region_tracks_multi_format_export(tmp_path: Path) -> None:
+    """formats + dpi flow through: one file per requested format."""
+    chrom = "chr1"
+    ctrl_mml = tmp_path / "ctrl.mml.bedgraph"
+    ctrl_me = tmp_path / "ctrl.me.bedgraph"
+    tgt_mml = tmp_path / "tgt.mml.bedgraph"
+    tgt_me = tmp_path / "tgt.me.bedgraph"
+    for p in (ctrl_mml, ctrl_me, tgt_mml, tgt_me):
+        _write_bedgraph(p, chrom=chrom, value_floor=0.2)
+
+    out = tmp_path / "tracks.png"
+    res = plot_region_tracks(
+        chrom=chrom,
+        start=200,
+        end=2500,
+        control_mml=ctrl_mml,
+        target_mml=tgt_mml,
+        control_me=ctrl_me,
+        target_me=tgt_me,
+        gtf_path=None,
+        out_path=out,
+        formats=("png", "svg", "pdf"),
+        dpi=100,
+    )
+    assert (tmp_path / "tracks.png").exists()
+    assert (tmp_path / "tracks.svg").exists()
+    assert (tmp_path / "tracks.pdf").exists()
+    # Return value stays the primary (first-format) path for back-compat.
+    assert Path(res) == tmp_path / "tracks.png"
+
+
+@pytest.mark.unit
 def test_plot_region_tracks_handles_no_overlapping_bins(tmp_path: Path) -> None:
     """If the requested region misses every bedgraph bin, the function
     must still emit a valid PNG with a fallback message in each panel."""

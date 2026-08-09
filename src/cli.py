@@ -9,7 +9,8 @@ Subcommands
 - ``extract``   BAM (or folder of BAMs) → modkit TSV
 - ``entropy``   modkit TSV → ME / MML / coverage bedgraphs
                 (--mode true_mc | bisulfite | ternary)
-- ``plot``      bedgraphs → track / ME-MML scatter / arch / paired landscape PNG
+- ``plot``      bedgraphs → track / ME-MML scatter / arch / paired landscape
+                (--formats png,jpg,svg,pdf --dpi N)
 - ``run``       one-shot pipeline: BAM(/folder)/TSV → entropy bedgraphs
                 (single sample or pair mode)
 - ``prefetch``  pre-download bundled FASTA + GTF for hg38 / mm10
@@ -211,6 +212,34 @@ def cmd_entropy(args: argparse.Namespace) -> int:
 # ─────────────────────────── plot ─────────────────────────────────────────
 
 
+def _formats_arg(value: str) -> list[str]:
+    """argparse type for ``--formats``: comma-separated list validated
+    against the supported export formats (png / jpg / svg / pdf)."""
+    from src.plots.export import normalise_format
+
+    try:
+        formats = [normalise_format(v) for v in value.split(",") if v.strip()]
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+    if not formats:
+        raise argparse.ArgumentTypeError("--formats needs at least one format")
+    return list(dict.fromkeys(formats))  # order-preserving dedupe (jpg + jpeg)
+
+
+def _dpi_arg(value: str) -> int:
+    """argparse type for ``--dpi``: bounded int so a typo can't ask
+    matplotlib for a multi-gigabyte raster buffer."""
+    from src.plots.export import MAX_DPI, MIN_DPI
+
+    try:
+        dpi = int(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"--dpi must be an integer, got {value!r}") from None
+    if not MIN_DPI <= dpi <= MAX_DPI:
+        raise argparse.ArgumentTypeError(f"--dpi must be between {MIN_DPI} and {MAX_DPI}")
+    return dpi
+
+
 def cmd_plot(args: argparse.Namespace) -> int:
     from src.plots.scatter import (
         load_paired_bedgraphs,
@@ -224,6 +253,8 @@ def cmd_plot(args: argparse.Namespace) -> int:
     apply_default_style()
     out_path = Path(args.out_path).expanduser().resolve()
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    formats: list[str] | None = args.formats
+    dpi: int = args.dpi
 
     if args.kind == "tracks":
         # All four bedgraphs are required for the new gene-panel layout.
@@ -263,6 +294,8 @@ def cmd_plot(args: argparse.Namespace) -> int:
             smooth_win=int(args.window),
             pad_bp=int(args.pad),
             out_path=str(out_path),
+            formats=formats,
+            dpi=dpi,
         )
     elif args.kind in ("scatter", "arch", "landscape"):
         # All three need the four paired bedgraphs.
@@ -288,6 +321,8 @@ def cmd_plot(args: argparse.Namespace) -> int:
                 label_b=args.label_b,
                 log_scale=log_scale,
                 out_path=str(out_path),
+                formats=formats,
+                dpi=dpi,
             )
         elif args.kind == "arch":
             triple_landscape(
@@ -298,6 +333,8 @@ def cmd_plot(args: argparse.Namespace) -> int:
                 color_b=args.color_b,
                 log_scale=log_scale,
                 out_path=str(out_path),
+                formats=formats,
+                dpi=dpi,
             )
         else:  # landscape (paired)
             paired_landscape(
@@ -313,11 +350,18 @@ def cmd_plot(args: argparse.Namespace) -> int:
                 filter_b_op=args.filter_b_op,
                 filter_b_value=float(args.filter_b_value),
                 max_lines=int(args.max_lines),
+                show_lines=bool(args.lines),
                 out_path=str(out_path),
+                formats=formats,
+                dpi=dpi,
             )
     else:
         raise SystemExit(f"Unknown plot kind: {args.kind!r}")
-    print(f"[OK] plot → {out_path}")
+    if formats:
+        for fmt in formats:
+            print(f"[OK] plot → {out_path.with_suffix('.' + fmt)}")
+    else:
+        print(f"[OK] plot → {out_path}")
     return 0
 
 
@@ -841,7 +885,7 @@ def build_parser() -> argparse.ArgumentParser:
     # plot --------------------------------------------------------------------
     p_pl = sub.add_parser(
         "plot",
-        help="Bedgraphs → tracks / scatter / arch / landscape PNG.",
+        help="Bedgraphs → tracks / scatter / arch / landscape (png/jpg/svg/pdf).",
         description=(
             "Render one of four plot kinds from your bedgraphs:\n\n"
             "  tracks     4-panel region plot — gene structure (exons +\n"
@@ -861,7 +905,32 @@ def build_parser() -> argparse.ArgumentParser:
         "kind",
         choices=["tracks", "scatter", "arch", "landscape"],
     )
-    p_pl.add_argument("out_path", help="Output PNG path.")
+    p_pl.add_argument(
+        "out_path",
+        help=(
+            "Output path. With --formats the extension is replaced per "
+            "format; otherwise the suffix picks the format (default png)."
+        ),
+    )
+
+    # Export controls (all plot kinds)
+    p_pl.add_argument(
+        "--formats",
+        type=_formats_arg,
+        default=None,
+        metavar="FMT[,FMT...]",
+        help=(
+            "Comma-separated export formats: png, jpg, svg, pdf. "
+            "One file is written per format (e.g. --formats png,svg,pdf). "
+            "Default: the out_path suffix only."
+        ),
+    )
+    p_pl.add_argument(
+        "--dpi",
+        type=_dpi_arg,
+        default=200,
+        help="Resolution for raster formats (png / jpg), 30–1200. Default: 200.",
+    )
 
     # Inputs (used by scatter / arch / landscape AND tracks)
     p_pl.add_argument("--control-mml", default=None)
@@ -936,6 +1005,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_pl.add_argument(
         "--max-lines", type=int, default=20_000, help="Max paired lines drawn (default: 20000)."
+    )
+    p_pl.add_argument(
+        "--lines",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Draw the black control → target connecting lines on the "
+            "paired landscape (default). Use --no-lines to keep only "
+            "the per-sample dots."
+        ),
     )
 
     # tracks specifics

@@ -128,3 +128,117 @@ def test_entropy_rejects_unknown_mode(tmp_path: Path) -> None:
         expect_exit=2,
     )
     assert "invalid choice" in proc.stderr.lower()
+
+
+# ─── plot: multi-format export + connecting-line toggle ──────────────────
+
+
+def _write_paired_bedgraphs(d: Path) -> dict[str, Path]:
+    """Four tiny bedgraphs sharing identical intervals so the inner
+    join in load_paired_bedgraphs keeps every bin."""
+    paths = {}
+    for name, floor in (
+        ("control_mml", 0.1),
+        ("control_me", 0.4),
+        ("target_mml", 0.3),
+        ("target_me", 0.6),
+    ):
+        p = d / f"{name}.bedgraph"
+        rows = [f"chr1\t{100 + 50 * i}\t{150 + 50 * i}\t{floor + 0.01 * i:.3f}" for i in range(20)]
+        p.write_text("\n".join(rows) + "\n")
+        paths[name] = p
+    return paths
+
+
+@pytest.mark.integration
+def test_plot_landscape_multi_format_and_no_lines(tmp_path: Path) -> None:
+    paths = _write_paired_bedgraphs(tmp_path)
+    out = tmp_path / "landscape.png"
+    _run(
+        "plot",
+        "landscape",
+        str(out),
+        "--control-mml",
+        str(paths["control_mml"]),
+        "--control-me",
+        str(paths["control_me"]),
+        "--target-mml",
+        str(paths["target_mml"]),
+        "--target-me",
+        str(paths["target_me"]),
+        "--filter-a-dim",
+        "off",
+        "--filter-b-dim",
+        "off",
+        "--formats",
+        "png,svg,pdf",
+        "--dpi",
+        "100",
+        "--no-lines",
+    )
+    assert (tmp_path / "landscape.png").exists()
+    assert (tmp_path / "landscape.svg").exists()
+    assert (tmp_path / "landscape.pdf").exists()
+    # --no-lines must drop the LineCollection: with only 20 bins the SVG
+    # is tiny; the connecting-line variant embeds one path per bin pair.
+    svg = (tmp_path / "landscape.svg").read_text()
+    assert "<svg" in svg
+
+
+@pytest.mark.integration
+def test_plot_help_lists_export_flags() -> None:
+    proc = _run("plot", "--help")
+    assert "--formats" in proc.stdout
+    assert "--dpi" in proc.stdout
+    assert "--no-lines" in proc.stdout
+
+
+@pytest.mark.integration
+def test_plot_rejects_unknown_format(tmp_path: Path) -> None:
+    paths = _write_paired_bedgraphs(tmp_path)
+    proc = _run(
+        "plot",
+        "scatter",
+        str(tmp_path / "s.png"),
+        "--control-mml",
+        str(paths["control_mml"]),
+        "--control-me",
+        str(paths["control_me"]),
+        "--target-mml",
+        str(paths["target_mml"]),
+        "--target-me",
+        str(paths["target_me"]),
+        "--formats",
+        "png,tiff",
+        expect_exit=2,
+    )
+    assert "tiff" in (proc.stderr + proc.stdout).lower()
+
+
+@pytest.mark.integration
+def test_plot_rejects_out_of_range_dpi(tmp_path: Path) -> None:
+    paths = _write_paired_bedgraphs(tmp_path)
+    proc = _run(
+        "plot",
+        "scatter",
+        str(tmp_path / "s.png"),
+        "--control-mml",
+        str(paths["control_mml"]),
+        "--control-me",
+        str(paths["control_me"]),
+        "--target-mml",
+        str(paths["target_mml"]),
+        "--target-me",
+        str(paths["target_me"]),
+        "--dpi",
+        "999999",
+        expect_exit=2,
+    )
+    assert "dpi" in (proc.stderr + proc.stdout).lower()
+
+
+@pytest.mark.integration
+def test_formats_arg_dedupes_aliases() -> None:
+    from src.cli import _formats_arg
+
+    assert _formats_arg("jpg,jpeg,png") == ["jpg", "png"]

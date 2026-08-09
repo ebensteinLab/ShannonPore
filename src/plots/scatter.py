@@ -25,6 +25,7 @@ Helper:
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Literal
 
@@ -36,6 +37,7 @@ from matplotlib.collections import LineCollection
 
 from src.constants import PALETTE_CONTROL, PALETTE_TARGET
 from src.io.bedgraph import read_bedgraph
+from src.plots.export import save_figure
 
 FilterDim = Literal["MML", "|dMML|", "ME", "|dME|"]
 FilterOp = Literal["<", ">"]
@@ -123,9 +125,15 @@ def me_mml_scatter(
     axis_cap: float = 1.0,
     vmax_pct: float = 70.0,
     out_path: Path | str | None = None,
+    formats: Sequence[str] | None = None,
+    dpi: int = 200,
 ) -> plt.Figure:
     """Side-by-side 2D-histogram scatters: control vs target for MML
-    and for ME. ``df`` must come from ``load_paired_bedgraphs``."""
+    and for ME. ``df`` must come from ``load_paired_bedgraphs``.
+
+    ``formats`` / ``dpi`` control export — see
+    :func:`src.plots.export.save_figure`.
+    """
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
     for ax, metric, title in (
@@ -184,7 +192,7 @@ def me_mml_scatter(
 
     fig.tight_layout()
     if out_path:
-        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        save_figure(fig, out_path, formats=formats, dpi=dpi)
     return fig
 
 
@@ -205,6 +213,8 @@ def triple_landscape(
     diff_linthresh: float = 10.0,
     linear_vmax: float | None = None,
     out_path: Path | str | None = None,
+    formats: Sequence[str] | None = None,
+    dpi: int = 200,
 ) -> plt.Figure:
     """3-panel landscape: A | B | (B − A), each MML × ME with the
     theoretical binary-entropy arch overlaid.
@@ -338,7 +348,7 @@ def triple_landscape(
 
     fig.tight_layout()
     if out_path:
-        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        save_figure(fig, out_path, formats=formats, dpi=dpi)
     return fig
 
 
@@ -389,13 +399,18 @@ def paired_landscape(
     filter_b_op: FilterOp = ">",
     filter_b_value: float = 0.4,
     max_lines: int = 20_000,
+    show_lines: bool = True,
     out_path: Path | str | None = None,
+    formats: Sequence[str] | None = None,
+    dpi: int = 200,
 ) -> plt.Figure:
     """Paired-line scatter (filtered).
 
     Each kept bin is drawn as a faint line from
     ``(mml_a, me_a) → (mml_b, me_b)``, plus two small dot scatters
     coloured by sample. The theoretical entropy arch is drawn on top.
+    Pass ``show_lines=False`` to omit the black connecting lines and
+    keep only the per-sample dots.
 
     Bin counts (Δ ME ↑ / Δ ME ↓) appear in a caption below the axes
     rather than as in-plot arrows.
@@ -428,7 +443,7 @@ def paired_landscape(
         ax.set_xlabel("Methylation level (MML)")
         ax.set_ylabel("Entropy (ME)")
         if out_path:
-            fig.savefig(out_path, dpi=200, bbox_inches="tight")
+            save_figure(fig, out_path, formats=formats, dpi=dpi)
         return fig
 
     plot_sub = sub.sample(min(n_bins, max_lines), random_state=1) if n_bins > max_lines else sub
@@ -436,7 +451,7 @@ def paired_landscape(
 
     # Paired faint lines (drawn as one LineCollection — orders of magnitude
     # faster than per-bin ax.plot calls when n_drawn is in the tens of thousands).
-    if n_drawn > 0:
+    if show_lines and n_drawn > 0:
         segs = np.stack(
             [
                 np.column_stack([plot_sub["mml_a"].to_numpy(), plot_sub["me_a"].to_numpy()]),
@@ -532,5 +547,5 @@ def paired_landscape(
     )
 
     if out_path:
-        fig.savefig(out_path, dpi=200, bbox_inches="tight")
+        save_figure(fig, out_path, formats=formats, dpi=dpi)
     return fig

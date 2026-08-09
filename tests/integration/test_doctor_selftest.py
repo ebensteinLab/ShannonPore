@@ -18,7 +18,7 @@ V4_DIR = Path(__file__).resolve().parents[2]
 
 def _run_cli(*args: str, **kw) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "src.cli", *args],
+        [sys.executable, "-m", "shannonpore.cli", *args],
         cwd=str(V4_DIR),
         capture_output=True,
         text=True,

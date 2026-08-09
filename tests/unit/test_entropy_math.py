@@ -7,8 +7,8 @@ import math
 import numpy as np
 import pytest
 
-from src.pipelines.roi_entropy_pipeline import entropy_vec, vect_to_num
-from src.pipelines.whole_genome_duckdb_pipeline import shannon_entropy_from_counts
+from shannonpore.pipelines.roi_entropy_pipeline import entropy_vec, vect_to_num
+from shannonpore.pipelines.whole_genome_duckdb_pipeline import shannon_entropy_from_counts
 
 
 @pytest.mark.unit

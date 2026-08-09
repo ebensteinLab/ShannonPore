@@ -62,14 +62,14 @@ Issues = "https://github.com/ebensteinLab/ShannonPore/issues"
 Documentation = "https://github.com/ebensteinLab/ShannonPore#readme"
 
 [project.scripts]
-shannonpore = "src.cli:main"
+shannonpore = "shannonpore.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "." }
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["src*"]
+include = ["shannonpore*"]
 
 [tool.ruff]
 line-length = 100

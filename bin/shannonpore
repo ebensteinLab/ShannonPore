@@ -27,11 +27,11 @@ ENV_NAME="${SHANNONPORE_ENV_NAME:-shannonpore}"
 for cli in micromamba mamba conda; do
     if command -v "$cli" >/dev/null 2>&1; then
         if "$cli" env list 2>/dev/null | awk '{print $1}' | grep -qx "$ENV_NAME"; then
-            exec "$cli" run -n "$ENV_NAME" python -m src.cli "$@"
+            exec "$cli" run -n "$ENV_NAME" python -m shannonpore.cli "$@"
         fi
     fi
 done
 
 # Fallback: use whatever python3 is on PATH, from inside the project root.
 cd "$V4_DIR"
-exec python3 -m src.cli "$@"
+exec python3 -m shannonpore.cli "$@"

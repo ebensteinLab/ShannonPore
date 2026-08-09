@@ -1,4 +1,4 @@
-"""pytest configuration: ensure v4 root is importable as `src.*`."""
+"""pytest configuration: ensure v4 root is importable as `shannonpore.*`."""
 
 from __future__ import annotations
 

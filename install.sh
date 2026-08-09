@@ -153,7 +153,7 @@ export SHANNONPORE_REF_DIR="$REF_DIR"
 # ── Editable install (puts `shannonpore` console script on PATH) ──────────
 log "Installing shannonpore package (editable)..."
 RUN pip install --no-deps --no-user -e "$V4_DIR" \
-    || warn "editable install failed; CLI still usable as 'python -m src.cli'"
+    || warn "editable install failed; CLI still usable as 'python -m shannonpore.cli'"
 
 # ── Bash completion ───────────────────────────────────────────────────────
 COMPLETION_DIR="$HOME/.local/share/bash-completion/completions"
@@ -267,7 +267,7 @@ fi
 
 # ── Doctor ────────────────────────────────────────────────────────────────
 log "Running 'shannonpore doctor'..."
-if RUN python -m src.cli doctor; then
+if RUN python -m shannonpore.cli doctor; then
     log "Doctor passed."
 else
     warn "Doctor reported issues. Review the table above; you may need to set SHANNONPORE_REF_DIR."
@@ -276,7 +276,7 @@ fi
 # ── Selftest ──────────────────────────────────────────────────────────────
 if [[ "${SHANNONPORE_SKIP_SELFTEST:-0}" != "1" ]]; then
     log "Running 'shannonpore selftest' (synthetic BAM end-to-end)..."
-    if RUN python -m src.cli selftest; then
+    if RUN python -m shannonpore.cli selftest; then
         log "Selftest passed. Install is fully functional."
     else
         warn "Selftest reported issues. See the output above."

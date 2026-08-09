@@ -60,7 +60,7 @@ def bam_fixture(tmp_path_factory) -> tuple[Path, Path]:
 
 def _run_cli(*args: str, expect_exit: int = 0, **kw) -> subprocess.CompletedProcess:
     proc = subprocess.run(
-        [sys.executable, "-m", "src.cli", *args],
+        [sys.executable, "-m", "shannonpore.cli", *args],
         cwd=str(V4_DIR),
         capture_output=True,
         text=True,

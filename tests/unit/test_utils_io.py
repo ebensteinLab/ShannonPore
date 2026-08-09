@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.io.utils_io import (
+from shannonpore.io.utils_io import (
     disk_free_gb,
     ensure_writable_dir,
     safe_mkdir,

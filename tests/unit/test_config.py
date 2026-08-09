@@ -17,7 +17,7 @@ def test_env_var_overrides_default_reference_dir(
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(fake_ref))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "results"))
 
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -27,7 +27,7 @@ def test_env_var_overrides_default_reference_dir(
 
 @pytest.mark.unit
 def test_assets_for_unknown_genome_raises(monkeypatch: pytest.MonkeyPatch) -> None:
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     with pytest.raises(ValueError, match="Unknown genome"):
         cfg.assets_for("dm6")
@@ -35,7 +35,7 @@ def test_assets_for_unknown_genome_raises(monkeypatch: pytest.MonkeyPatch) -> No
 
 @pytest.mark.unit
 def test_genomes_registry_has_hg38_and_mm10() -> None:
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     assert "hg38" in cfg.GENOMES
     assert "mm10" in cfg.GENOMES
@@ -45,7 +45,7 @@ def test_genomes_registry_has_hg38_and_mm10() -> None:
 @pytest.mark.unit
 def test_no_hardcoded_home_ebensteinlab_paths_in_source() -> None:
     """v4 must never embed `/home/EbensteinLab/...` literals."""
-    src_dir = Path(__file__).resolve().parents[2] / "src"
+    src_dir = Path(__file__).resolve().parents[2] / "shannonpore"
     offenders: list[str] = []
     for py in src_dir.rglob("*.py"):
         text = py.read_text()
@@ -56,7 +56,7 @@ def test_no_hardcoded_home_ebensteinlab_paths_in_source() -> None:
 
 @pytest.mark.unit
 def test_reference_status_returns_per_genome_dict() -> None:
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
     status = cfg.reference_status()
@@ -74,7 +74,7 @@ def test_ensure_genome_gtf_short_circuits_when_file_present(
     """If the GTF is already on disk, no download attempt should happen."""
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -101,7 +101,7 @@ def test_ensure_genome_gtf_downloads_when_missing(
 ) -> None:
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -126,7 +126,7 @@ def test_ensure_genome_gtf_failure_raises_runtime_error_and_cleans_up(
 ) -> None:
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -158,7 +158,7 @@ def test_ensure_genome_fasta_short_circuits_when_indexed(
     """Already-cached FASTA + .fai → no download, no samtools call."""
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -193,7 +193,7 @@ def test_ensure_genome_fasta_downloads_and_indexes(
     """Cold cache → download .gz, gunzip, samtools faidx (mocked)."""
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 
@@ -241,7 +241,7 @@ def test_ensure_genome_fasta_failure_cleans_up_partials(
 ) -> None:
     monkeypatch.setenv("SHANNONPORE_REF_DIR", str(tmp_path))
     monkeypatch.setenv("SHANNONPORE_RESULTS_DIR", str(tmp_path / "out"))
-    import src.config as cfg
+    import shannonpore.config as cfg
 
     importlib.reload(cfg)
 

@@ -96,8 +96,8 @@ def _orchestrate(
     fa: Path, *, bam: Path | None, tsv: Path | None, out_dir: Path, label: str
 ) -> object:
     """Drive the v4 orchestrator without going through the CLI."""
-    from src.pipelines.orchestrator import run_pipeline
-    from src.state import SampleSpec
+    from shannonpore.pipelines.orchestrator import run_pipeline
+    from shannonpore.state import SampleSpec
 
     if bam is not None:
         spec = SampleSpec(label=label, input_kind="bam", bam_path=bam)
@@ -250,7 +250,7 @@ def test_cli_run_on_bam_produces_same_bedgraphs_as_orchestrator(
         [
             sys.executable,
             "-m",
-            "src.cli",
+            "shannonpore.cli",
             "run",
             "--bam",
             str(bam),

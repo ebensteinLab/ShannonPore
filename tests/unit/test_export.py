@@ -15,7 +15,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import pytest
 
-from src.plots.export import SUPPORTED_FORMATS, save_figure
+from shannonpore.plots.export import SUPPORTED_FORMATS, save_figure
 
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 JPG_MAGIC = b"\xff\xd8\xff"

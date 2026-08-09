@@ -18,7 +18,7 @@ build:
   noarch: python
   number: 0
   entry_points:
-    - shannonpore = src.cli:main
+    - shannonpore = shannonpore.cli:main
   script: {{ PYTHON }} -m pip install . --no-deps --no-build-isolation -vv
   run_exports:
     - {{ pin_subpackage('shannonpore', max_pin='x.x') }}

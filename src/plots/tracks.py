@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import os
+from collections.abc import Sequence
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -28,6 +29,7 @@ from src.io.gtf_utils import (
     load_gene_structures,
 )
 from src.io.utils_io import safe_mkdir
+from src.plots.export import save_figure
 
 logger = logging.getLogger(__name__)
 
@@ -264,6 +266,8 @@ def plot_region_tracks(
     pad_bp: int = 2000,
     smooth_win: int = 5,
     out_path: str | Path,
+    formats: Sequence[str] | None = None,
+    dpi: int = 200,
 ) -> Path:
     """Render the 4-panel region track figure.
 
@@ -277,6 +281,10 @@ def plot_region_tracks(
 
     The window is widened by ``pad_bp`` on each side so the gene body
     fits comfortably without flush-cutting promoters / exons.
+
+    ``formats`` / ``dpi`` control export (see
+    :func:`src.plots.export.save_figure`); the returned path is the
+    first written file.
     """
     safe_mkdir(os.path.dirname(str(out_path)))
     plot_lo = max(0, int(start) - int(pad_bp))
@@ -385,10 +393,9 @@ def plot_region_tracks(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
         fig.tight_layout()
-    out = Path(out_path)
-    fig.savefig(out, dpi=200, bbox_inches="tight")
+    written = save_figure(fig, Path(out_path), formats=formats, dpi=dpi)
     plt.close(fig)
-    return out
+    return written[0]
 
 
 # ─── Backwards-compatible wrapper kept for callers that still use the v3

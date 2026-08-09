@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+### Multi-format plot export + paired-landscape line toggle
+
+**Features**
+- Every plot (ME/MML scatter, arch landscape, paired landscape, region
+  tracks) can now be exported as high-resolution **PNG / JPG / SVG /
+  PDF** in one render. New shared helper `src.plots.export.save_figure`
+  centralises saving: raster formats honour a configurable DPI
+  (bounded 30–1200), JPG is flattened onto white at quality 95, and
+  SVG/PDF are true vector output.
+- GUI: new **export settings** row on the Graph Preparation tab —
+  format multiselect + DPI input (default PNG @ 300) applied to all
+  four render buttons; every saved file is listed with its size.
+- GUI: new **connecting lines** toggle on the paired landscape hides
+  the black control → target `LineCollection` (`show_lines=False`),
+  keeping only the per-sample dots.
+- CLI: `shannonpore plot` gains `--formats png,jpg,svg,pdf` (validated,
+  alias-deduped), `--dpi N` (bounded, friendly argparse errors), and
+  `--lines/--no-lines` for the paired landscape.
+
+**Back-compat**
+- `out_path`-only calls (no `formats=`) keep the old behaviour exactly,
+  including pass-through of any matplotlib-supported suffix (`.eps`,
+  `.tif`, …) and the dpi=200 default. `plot_region_tracks` still
+  returns a single `Path`.
+
+**QC**
+- +22 tests (export helper unit tests, line-toggle assertions,
+  multi-format integration through the CLI). Security review closed a
+  resource-exhaustion gap by bounding DPI at both the library and
+  argparse layers.
+
 ### Repo-wide coherence sweep (3 parallel reviewers)
 
 **Code coherence**

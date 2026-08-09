@@ -157,7 +157,7 @@ def _load_paired(gp):
 
 
 @show_error(user_message="ME / MML scatter failed.")
-def _render_me_mml_scatter(gp, out_path: Path, log_scale: bool):
+def _render_me_mml_scatter(gp, out_path: Path, log_scale: bool, *, formats: list[str], dpi: int):
     df = _load_paired(gp)
     if df is None or df.empty:
         return None
@@ -167,11 +167,13 @@ def _render_me_mml_scatter(gp, out_path: Path, log_scale: bool):
         label_b=gp.target.name or "Target",
         log_scale=log_scale,
         out_path=out_path,
+        formats=formats,
+        dpi=dpi,
     )
 
 
 @show_error(user_message="Arch landscape plot failed.")
-def _render_triple_landscape(gp, out_path: Path, log_scale: bool):
+def _render_triple_landscape(gp, out_path: Path, log_scale: bool, *, formats: list[str], dpi: int):
     df = _load_paired(gp)
     if df is None or df.empty:
         return None
@@ -183,6 +185,8 @@ def _render_triple_landscape(gp, out_path: Path, log_scale: bool):
         color_b=gp.target.color,
         log_scale=log_scale,
         out_path=out_path,
+        formats=formats,
+        dpi=dpi,
     )
 
 
@@ -198,6 +202,9 @@ def _render_paired_landscape(
     fb_op,
     fb_val,
     max_lines,
+    show_lines: bool,
+    formats: list[str],
+    dpi: int,
 ):
     df = _load_paired(gp)
     if df is None or df.empty:
@@ -215,12 +222,17 @@ def _render_paired_landscape(
         filter_b_op=fb_op,
         filter_b_value=fb_val,
         max_lines=max_lines,
+        show_lines=show_lines,
         out_path=out_path,
+        formats=formats,
+        dpi=dpi,
     )
 
 
 @show_error(user_message="Track plot failed.")
-def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
+def _render_tracks(
+    gp, out_path: Path, *, smooth_win: int, pad_bp: int, formats: list[str], dpi: int
+):
     if not _paired_paths_ready(gp):
         return None
     return plot_region_tracks(
@@ -241,21 +253,25 @@ def _render_tracks(gp, out_path: Path, *, smooth_win: int, pad_bp: int):
         smooth_win=smooth_win,
         pad_bp=pad_bp,
         out_path=out_path,
+        formats=formats,
+        dpi=dpi,
     )
 
 
 # ─── UI helper: surface where a plot was saved ────────────────────────────
 
 
-def _show_saved_path(out: Path) -> None:
-    """Display the on-disk path of a just-rendered plot so users can
-    grab it for papers, share it, etc."""
+def _show_saved_paths(out_base: Path, formats: list[str]) -> None:
+    """Display the on-disk path of every just-exported file (one per
+    format) so users can grab them for papers, share them, etc."""
     import streamlit as st
 
-    if not out.exists():
-        return
-    size_kb = out.stat().st_size / 1024.0
-    st.success(f"Saved → `{out}`  ({size_kb:,.0f} KB)")
+    for fmt in formats:
+        out = out_base.with_suffix(f".{fmt}")
+        if not out.exists():
+            continue
+        size_kb = out.stat().st_size / 1024.0
+        st.success(f"Saved → `{out}`  ({size_kb:,.0f} KB)")
 
 
 # ─── Tab help text ────────────────────────────────────────────────────────
@@ -277,6 +293,10 @@ Four plot families compare your control and target bedgraphs:
 
 Bedgraph paths are auto-populated after a successful run on the **File
 Preparation** tab. Sample labels and colours flow through to every plot.
+
+**Export settings** (top of the tab) apply to every plot: pick one or
+more formats — PNG / JPG (rasterised at the chosen DPI) or SVG / PDF
+(vector, resolution-independent) — and each render saves them all.
 """
 
 
@@ -293,6 +313,36 @@ def render() -> None:
     out_dir = Path(ensure_writable_dir(str(RESULTS_DIR / "graph_prep"), "Plots out"))
     update_section("graph_prep", plots_dir=out_dir)
     st.caption(f"📁 Plots saved to: `{out_dir}`")
+
+    # ── export settings (apply to every plot on this tab) ─────────
+    ef_col, dpi_col = st.columns([3, 1])
+    with ef_col:
+        export_formats: list[str] = st.multiselect(
+            "export formats",
+            options=["png", "jpg", "svg", "pdf"],
+            default=["png"],
+            key="export_formats",
+            help=(
+                "Every rendered plot is saved once per selected format. "
+                "SVG / PDF are vector (resolution-independent); "
+                "PNG / JPG are rasterised at the chosen DPI."
+            ),
+        )
+    with dpi_col:
+        # GUI default (300) is deliberately higher than the library /
+        # CLI default (200): GUI exports are usually paper figures.
+        export_dpi: int = st.number_input(
+            "DPI (png / jpg)",
+            min_value=72,
+            max_value=1200,
+            value=300,
+            step=25,
+            key="export_dpi",
+            help="Resolution for raster formats. 300+ is print-quality.",
+        )
+    if not export_formats:
+        export_formats = ["png"]
+        st.caption("No format selected — defaulting to `png`.")
 
     paths_loaded = _paired_paths_ready(gp)
     with st.expander(
@@ -340,10 +390,16 @@ def render() -> None:
             st.error("control and target MML + ME bedgraphs all required")
         else:
             out = out_dir / f"me_mml_{'log' if log_scale_02 else 'linear'}.png"
-            fig = _render_me_mml_scatter(gp, out, log_scale=log_scale_02)
+            fig = _render_me_mml_scatter(
+                gp,
+                out,
+                log_scale=log_scale_02,
+                formats=export_formats,
+                dpi=export_dpi,
+            )
             if fig is not None:
                 st.pyplot(fig)
-                _show_saved_path(out)
+                _show_saved_paths(out, export_formats)
 
     st.markdown("---")
 
@@ -369,10 +425,16 @@ def render() -> None:
             st.error("control and target MML + ME bedgraphs all required")
         else:
             out = out_dir / f"arch_{'log' if log_scale_03 else 'linear'}.png"
-            fig = _render_triple_landscape(gp, out, log_scale=log_scale_03)
+            fig = _render_triple_landscape(
+                gp,
+                out,
+                log_scale=log_scale_03,
+                formats=export_formats,
+                dpi=export_dpi,
+            )
             if fig is not None:
                 st.pyplot(fig)
-                _show_saved_path(out)
+                _show_saved_paths(out, export_formats)
 
     st.markdown("---")
 
@@ -433,14 +495,24 @@ def render() -> None:
             key="pl_fb_val",
         )
 
-    max_lines = st.slider(
-        "max paired lines drawn (subsample for speed)",
-        1_000,
-        100_000,
-        20_000,
-        step=1_000,
-        key="pl_max_lines",
-    )
+    ml_col, sl_col = st.columns([3, 1])
+    with ml_col:
+        max_lines = st.slider(
+            "max paired lines drawn (subsample for speed)",
+            1_000,
+            100_000,
+            20_000,
+            step=1_000,
+            key="pl_max_lines",
+        )
+    with sl_col:
+        st.write("")
+        show_lines = st.toggle(
+            "connecting lines",
+            value=True,
+            key="pl_show_lines",
+            help="Off = hide the black control → target lines, keep only the per-sample dots.",
+        )
 
     if st.button(
         "RENDER PAIRED LANDSCAPE",
@@ -468,10 +540,13 @@ def render() -> None:
                 fb_op=fb_op,
                 fb_val=float(fb_val),
                 max_lines=int(max_lines),
+                show_lines=bool(show_lines),
+                formats=export_formats,
+                dpi=export_dpi,
             )
             if fig is not None:
                 st.pyplot(fig)
-                _show_saved_path(out)
+                _show_saved_paths(out, export_formats)
 
     st.markdown("---")
 
@@ -644,7 +719,22 @@ def render() -> None:
                 out,
                 smooth_win=int(smooth_win),
                 pad_bp=int(pad_bp),
+                formats=export_formats,
+                dpi=export_dpi,
             )
             if res and Path(res).exists():
-                st.image(str(res))
-                _show_saved_path(out)
+                # st.image can only preview raster files — fall back to
+                # just listing the saved paths for svg / pdf-only exports.
+                preview = next(
+                    (
+                        out.with_suffix(f".{f}")
+                        for f in export_formats
+                        if f in ("png", "jpg") and out.with_suffix(f".{f}").exists()
+                    ),
+                    None,
+                )
+                if preview is not None:
+                    st.image(str(preview))
+                else:
+                    st.info("Vector-only export — no inline preview; files saved below.")
+                _show_saved_paths(out, export_formats)

@@ -12,7 +12,7 @@ package:
 
 source:
   url: https://github.com/ebensteinLab/ShannonPore/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: FILL_ME_AFTER_TAGGING_v{{ version }}
+  sha256: e7ca2e4a1d34b4500abc2a4e3e6b3ae4943c9daf566c86d5fd0f21e61bcedb62
 
 build:
   noarch: python

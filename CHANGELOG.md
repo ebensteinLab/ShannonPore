@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.2.0 — 2026-08-09
+
+### Citation
+- README citation section + `CITATION.cff` `preferred-citation` for the
+  preprint: Bertocchi et al. 2026, bioRxiv,
+  doi:10.64898/2026.07.08.736699.
+
+### Conda packaging groundwork
+- `conda-recipe/meta.yaml` staging copy of the bioconda recipe and
+  `docs/CONDA.md` release/submission playbook.
+
 ### Package rename: `src` → `shannonpore` (BREAKING for imports)
 
 - The top-level Python package is now `shannonpore` (was the generic

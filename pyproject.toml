@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shannonpore"
-version = "0.1.0"
+version = "0.2.0"
 description = "Streamlit GUI for nanopore methylation entropy analysis"
 readme = "README.md"
 requires-python = ">=3.10,<3.11"

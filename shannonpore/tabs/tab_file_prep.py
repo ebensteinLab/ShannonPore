@@ -492,21 +492,40 @@ def render() -> None:
     update_section("file_prep", output_dir=Path(out_dir) if out_dir else None)
 
     st.markdown("---")
+    # Guard against double-starting the pipeline: a rerun of this script
+    # (second click, or the browser reconnecting during a long job) must
+    # not launch a second pipeline while one is still running — both
+    # would ingest into the same DuckDB and collide.
+    pipeline_running = bool(st.session_state.get("sp_pipeline_running", False))
     col_run, col_status = st.columns([1, 3])
     with col_run:
-        run_clicked = st.button("RUN PIPELINE", type="primary", use_container_width=True)
+        run_clicked = st.button(
+            "RUN PIPELINE",
+            type="primary",
+            use_container_width=True,
+            disabled=pipeline_running,
+        )
     with col_status:
-        if fp.last_run_id:
+        if pipeline_running:
+            st.info(
+                "A pipeline is already running in this session — "
+                "wait for it to finish before starting another."
+            )
+        elif fp.last_run_id:
             st.markdown(
                 f'<div class="caption">last run · {fp.last_run_id}</div>',
                 unsafe_allow_html=True,
             )
 
-    if run_clicked:
+    if run_clicked and not pipeline_running:
         if not out_dir:
             st.error("set an output directory first")
             return
-        summary = _run(Path(out_dir))
+        st.session_state["sp_pipeline_running"] = True
+        try:
+            summary = _run(Path(out_dir))
+        finally:
+            st.session_state["sp_pipeline_running"] = False
         if summary:
             st.success(
                 "pipeline complete · output paths auto-loaded into the " "Graph Preparation tab"

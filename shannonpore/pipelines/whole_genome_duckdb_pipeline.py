@@ -25,6 +25,13 @@ import duckdb
 import numpy as np
 from pyfaidx import Fasta
 
+from shannonpore.pipelines.duckdb_utils import (
+    configure_connection,
+    ingest_lock,
+    ingest_memory_limit_gb,
+    worker_memory_limit_gb,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,23 +121,6 @@ def stage_a_build_duckdb_table(
             "Your modkit extract TSV should be TAB-separated."
         )
 
-    con = duckdb.connect(db_path)
-    con.execute(f"PRAGMA temp_directory='{tmp_dir}';")
-    con.execute(f"PRAGMA threads={int(threads)};")
-
-    exists = (
-        con.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
-            [table_name],
-        ).fetchone()[0]
-        > 0
-    )
-    if exists and not force:
-        con.close()
-        return
-    if exists and force:
-        con.execute(f"DROP TABLE {table_name};")
-
     # mode-dependent WHERE clause
     if entropy_mode == "true_mc":
         mode_filter = "AND mod_code = 'm'"
@@ -139,12 +129,37 @@ def stage_a_build_duckdb_table(
     else:
         raise ValueError(f"Unknown entropy_mode: {entropy_mode!r}")
 
-    # SQL-quote the TSV path so a path containing a single quote (e.g.
-    # /data/O'Brien/sample.tsv) doesn't break the SQL parse.
-    tsv_path_sql = str(tsv_path).replace("'", "''")
+    # Serialize ingest per database file: a concurrent CREATE TABLE from
+    # a second run (Streamlit rerun / double-click) otherwise dies with
+    # a DuckDB catalog write-write conflict.
+    with ingest_lock(db_path):
+        con = duckdb.connect(db_path)
+        configure_connection(
+            con,
+            threads=int(threads),
+            memory_limit_gb=ingest_memory_limit_gb(),
+            tmp_dir=tmp_dir,
+        )
 
-    con.execute(
-        f"""
+        exists = (
+            con.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+                [table_name],
+            ).fetchone()[0]
+            > 0
+        )
+        if exists and not force:
+            con.close()
+            return
+        if exists and force:
+            con.execute(f"DROP TABLE {table_name};")
+
+        # SQL-quote the TSV path so a path containing a single quote (e.g.
+        # /data/O'Brien/sample.tsv) doesn't break the SQL parse.
+        tsv_path_sql = str(tsv_path).replace("'", "''")
+
+        con.execute(
+            f"""
         CREATE TABLE {table_name} AS
         WITH raw AS (
             SELECT
@@ -177,11 +192,13 @@ def stage_a_build_duckdb_table(
             SUM(mod_qual) AS mod_qual
         FROM raw
         GROUP BY 1,2,3;
-        """
-    )
-    con.execute(f"CREATE INDEX idx_{table_name}_chrom_pos ON {table_name}(chrom, ref_position);")
-    con.execute(f"CREATE INDEX idx_{table_name}_chrom ON {table_name}(chrom);")
-    con.close()
+            """
+        )
+        con.execute(
+            f"CREATE INDEX idx_{table_name}_chrom_pos ON {table_name}(chrom, ref_position);"
+        )
+        con.execute(f"CREATE INDEX idx_{table_name}_chrom ON {table_name}(chrom);")
+        con.close()
 
 
 def compute_chrom_metrics_from_db(
@@ -194,6 +211,7 @@ def compute_chrom_metrics_from_db(
     methyl_thresh: float,
     min_coverage: int,
     fasta_chunk: int,
+    mem_limit_gb: int = 4,
 ) -> str:
     ensure_dir(out_chrom_dir)
     out_cov = os.path.join(out_chrom_dir, f"{chrom}.coverage.bedgraph")
@@ -214,11 +232,20 @@ def compute_chrom_metrics_from_db(
     starts = cpg_positions[0 : n_full_bins * k : k]
     ends = cpg_positions[(k - 1) : (n_full_bins * k) : k] + 2
 
+    # hash(read_id) collapses long read-name strings to 64-bit keys on
+    # the DuckDB side, and fetchnumpy() lands them directly in compact
+    # numpy arrays. The old fetchall() built a Python tuple + str per
+    # event — tens of GB per large chromosome, in every worker at once.
+    # (Only key *identity* within this chrom matters, so a 64-bit hash
+    # is safe: collision odds for a few million reads are ~1e-7.)
     con = duckdb.connect(db_path, read_only=True)
-    rows = con.execute(
-        f"SELECT read_id, ref_position, mod_qual FROM {table_name} WHERE chrom = ?",
+    con.execute(f"PRAGMA memory_limit='{int(mem_limit_gb)}GB';")
+    con.execute("PRAGMA threads=1;")
+    res = con.execute(
+        f"SELECT hash(read_id) AS read_key, ref_position, mod_qual "
+        f"FROM {table_name} WHERE chrom = ?",
         [chrom],
-    ).fetchall()
+    ).fetchnumpy()
     con.close()
 
     def _write_zero_coverage(reason: str) -> str:
@@ -229,13 +256,16 @@ def compute_chrom_metrics_from_db(
         Path(out_me).touch()
         return f"[INFO] {chrom}: {reason}"
 
-    if not rows:
+    read_key = np.asarray(res["read_key"], dtype=np.uint64)
+    pos = np.asarray(res["ref_position"], dtype=np.int64)
+    mod = np.asarray(res["mod_qual"], dtype=np.float32)
+    n_events = int(pos.size)
+    del res
+
+    if n_events == 0:
         return _write_zero_coverage("no events, wrote zero-coverage outputs")
 
-    read_id = np.array([r[0] for r in rows], dtype=object)
-    pos = np.array([r[1] for r in rows], dtype=np.int64)
-    mod = np.array([r[2] for r in rows], dtype=np.float32)
-    read_code, _ = pd_factorize(read_id)
+    read_code, _ = pd_factorize(read_key)
 
     idx = np.searchsorted(cpg_positions, pos)
     valid = (idx >= 0) & (idx < cpg_positions.size)
@@ -365,7 +395,7 @@ def compute_chrom_metrics_from_db(
             if not np.isnan(me_arr[i]):
                 f_me.write(f"{chrom}\t{int(starts[i])}\t{int(ends[i])}\t{float(me_arr[i]):.6f}\n")
 
-    return f"[INFO] {chrom}: done (rows fetched: {len(rows)})"
+    return f"[INFO] {chrom}: done (rows fetched: {n_events})"
 
 
 def concat_chrom_outputs(chroms: list[str], out_chrom_dir: str, out_prefix: str) -> None:
@@ -449,8 +479,12 @@ def run_whole_genome_duckdb_only(
     )
 
     nproc = max(1, min(int(threads), len(chrom_list)))
+    worker_mem_gb = worker_memory_limit_gb(nproc)
     if progress_cb:
-        progress_cb(f"[WG] Stage B: per-chrom metrics with {nproc} processes")
+        progress_cb(
+            f"[WG] Stage B: per-chrom metrics with {nproc} processes "
+            f"({worker_mem_gb} GB DuckDB budget each)"
+        )
 
     worker_args = [
         (
@@ -463,6 +497,7 @@ def run_whole_genome_duckdb_only(
             float(methyl_thresh),
             int(min_coverage),
             int(fasta_chunk),
+            worker_mem_gb,
         )
         for chrom in chrom_list
     ]

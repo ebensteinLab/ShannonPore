@@ -25,6 +25,13 @@ import duckdb
 import numpy as np
 from pyfaidx import Fasta
 
+from shannonpore.pipelines.duckdb_utils import (
+    configure_connection,
+    ingest_lock,
+    ingest_memory_limit_gb,
+    worker_memory_limit_gb,
+)
+
 logger = logging.getLogger(__name__)
 
 _BASE3_CACHE: dict[int, np.ndarray] = {}
@@ -102,29 +109,37 @@ def stage_a_build_duckdb_ternary(
     if b"\t" not in head:
         raise ValueError("Input TSV does not look tab-delimited.")
 
-    con = duckdb.connect(db_path)
-    con.execute(f"PRAGMA temp_directory='{tmp_dir}';")
-    con.execute(f"PRAGMA threads={int(threads)};")
+    # Serialize ingest per database file: a concurrent CREATE TABLE from
+    # a second run (Streamlit rerun / double-click) otherwise dies with
+    # a DuckDB catalog write-write conflict.
+    with ingest_lock(db_path):
+        con = duckdb.connect(db_path)
+        configure_connection(
+            con,
+            threads=int(threads),
+            memory_limit_gb=ingest_memory_limit_gb(),
+            tmp_dir=tmp_dir,
+        )
 
-    exists = (
+        exists = (
+            con.execute(
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
+                [table_name],
+            ).fetchone()[0]
+            > 0
+        )
+        if exists and not force:
+            con.close()
+            return
+        if exists and force:
+            con.execute(f"DROP TABLE {table_name};")
+
+        thresh = float(methyl_thresh)
+        # SQL-quote the TSV path so a single-quote in the path doesn't
+        # blow up the SQL parser.
+        tsv_path_sql = str(tsv_path).replace("'", "''")
         con.execute(
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?",
-            [table_name],
-        ).fetchone()[0]
-        > 0
-    )
-    if exists and not force:
-        con.close()
-        return
-    if exists and force:
-        con.execute(f"DROP TABLE {table_name};")
-
-    thresh = float(methyl_thresh)
-    # SQL-quote the TSV path so a single-quote in the path doesn't blow
-    # up the SQL parser.
-    tsv_path_sql = str(tsv_path).replace("'", "''")
-    con.execute(
-        f"""
+            f"""
         CREATE TABLE {table_name} AS
         WITH raw AS (
             SELECT
@@ -166,11 +181,13 @@ def stage_a_build_duckdb_ternary(
                 ELSE 0
             END AS state
         FROM pivoted;
-        """
-    )
-    con.execute(f"CREATE INDEX idx_{table_name}_chrom_pos ON {table_name}(chrom, ref_position);")
-    con.execute(f"CREATE INDEX idx_{table_name}_chrom ON {table_name}(chrom);")
-    con.close()
+            """
+        )
+        con.execute(
+            f"CREATE INDEX idx_{table_name}_chrom_pos ON {table_name}(chrom, ref_position);"
+        )
+        con.execute(f"CREATE INDEX idx_{table_name}_chrom ON {table_name}(chrom);")
+        con.close()
 
 
 def compute_chrom_ternary(
@@ -182,6 +199,7 @@ def compute_chrom_ternary(
     cpgs_per_bin: int,
     min_coverage: int,
     fasta_chunk: int,
+    mem_limit_gb: int = 4,
 ) -> str:
     """Worker: per-chrom ternary ME / MML / MhML / coverage / cov_5mc / cov_5hmc."""
     _ensure_dir(out_chrom_dir)
@@ -201,11 +219,17 @@ def compute_chrom_ternary(
     starts = cpg_positions[0 : n_full * k : k]
     ends = cpg_positions[(k - 1) : n_full * k : k] + 2
 
+    # hash(read_id) → compact 64-bit keys, fetchnumpy() → numpy arrays.
+    # See whole_genome_duckdb_pipeline.compute_chrom_metrics_from_db for
+    # the memory rationale.
     con = duckdb.connect(db_path, read_only=True)
-    rows = con.execute(
-        f"SELECT read_id, ref_position, state FROM {table_name} WHERE chrom = ?",
+    con.execute(f"PRAGMA memory_limit='{int(mem_limit_gb)}GB';")
+    con.execute("PRAGMA threads=1;")
+    res = con.execute(
+        f"SELECT hash(read_id) AS read_key, ref_position, state "
+        f"FROM {table_name} WHERE chrom = ?",
         [chrom],
-    ).fetchall()
+    ).fetchnumpy()
     con.close()
 
     def _empty_outputs(reason: str) -> str:
@@ -216,13 +240,15 @@ def compute_chrom_ternary(
             Path(out_paths[s]).touch()
         return f"[INFO] {chrom}: {reason}"
 
-    if not rows:
+    read_key = np.asarray(res["read_key"], dtype=np.uint64)
+    pos = np.asarray(res["ref_position"], dtype=np.int64)
+    state = np.asarray(res["state"], dtype=np.int8)
+    del res
+
+    if pos.size == 0:
         return _empty_outputs("no events")
 
-    read_ids = np.array([r[0] for r in rows], dtype=object)
-    pos = np.array([r[1] for r in rows], dtype=np.int64)
-    state = np.array([r[2] for r in rows], dtype=np.int8)
-    read_code, _ = _factorize(read_ids)
+    read_code, _ = _factorize(read_key)
 
     idx = np.searchsorted(cpg_positions, pos)
     valid = (idx >= 0) & (idx < cpg_positions.size)
@@ -366,7 +392,7 @@ def compute_chrom_ternary(
     _write(out_paths["mhml"], mhml_arr)
     _write(out_paths["cov_5mc"], cov5mc, is_int=True)
     _write(out_paths["cov_5hmc"], cov5hmc, is_int=True)
-    return f"[INFO] {chrom}: done ({len(rows):,} rows, {int(cov_arr.sum()):,} coverage)"
+    return f"[INFO] {chrom}: done ({int(pos.size):,} rows, {int(cov_arr.sum()):,} coverage)"
 
 
 def concat_ternary_outputs(chroms: list[str], out_chrom_dir: str, out_prefix: str) -> None:
@@ -444,8 +470,12 @@ def run_whole_genome_ternary(
     )
 
     nproc = max(1, min(int(threads), len(chrom_list)))
+    worker_mem_gb = worker_memory_limit_gb(nproc)
     if progress_cb:
-        progress_cb(f"[ternary] Stage B: per-chrom metrics with {nproc} workers")
+        progress_cb(
+            f"[ternary] Stage B: per-chrom metrics with {nproc} workers "
+            f"({worker_mem_gb} GB DuckDB budget each)"
+        )
     args = [
         (
             chrom,
@@ -456,6 +486,7 @@ def run_whole_genome_ternary(
             int(cpgs_per_bin),
             int(min_coverage),
             int(fasta_chunk),
+            worker_mem_gb,
         )
         for chrom in chrom_list
     ]
